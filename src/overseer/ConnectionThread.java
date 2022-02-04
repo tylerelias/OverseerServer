@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.security.InvalidParameterException;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ConnectionThread extends Thread {
     // Constants come here, mostly for messages from/to client
@@ -21,13 +22,15 @@ public class ConnectionThread extends Thread {
     // Info needed to verify and communicate with client
     private final Socket socket;
     private final Logger logger;
+    private AtomicReference<ServerData> serverData;
     String serverSteps;
     String clientSteps;
     String clientConnectionId;
 
-    public ConnectionThread(Socket clientSocket, String _steps) {
+    public ConnectionThread(Socket clientSocket, AtomicReference<ServerData> serverData) {
         this.socket = clientSocket;
-        this.serverSteps = _steps;
+        this.serverData = serverData;
+        this.serverSteps = serverData.get().getStepNumber();
         logger = new Logger();
     }
 
@@ -46,6 +49,7 @@ public class ConnectionThread extends Thread {
 
     private void closeSocket() throws IOException {
         this.socket.close();
+        this.serverData.get().setCurrentConnections(this.serverData.get().getCurrentConnections() - 1);
         this.logger.log(String.format("%s: Socket gracefully closed", clientConnectionId));
     }
 
@@ -60,7 +64,7 @@ public class ConnectionThread extends Thread {
             String message = dataInputStream.readUTF();
 
             // Todo: Remove print in future?
-            this.logger.log(String.format("Message: %s. On thread: %s", message, Thread.currentThread()));
+            this.logger.log(String.format("Message: %s. %s", message, Thread.currentThread()));
 
             processMessage(message);
             return message;
