@@ -45,7 +45,7 @@ public class ConnectionThread extends Thread {
     }
 
     private boolean checkIfConnectionTerminated(String message) {
-        return message.equals(TERMINATE_CONNECTION) || message.equals(ABORT_CONNECTION);
+        return !(message.equals(TERMINATE_CONNECTION) || message.equals(ABORT_CONNECTION));
     }
 
     private String readMessageFromSocket(Socket socket) {
@@ -65,9 +65,7 @@ public class ConnectionThread extends Thread {
             // the socket had no message to send, so move along
         } catch (Exception e) {
             System.out.println("Exception thrown in ConnectionThread: " + e.getMessage());
-            return "abort";
         }
-        // fugly, change this later
         return "abort";
     }
 
