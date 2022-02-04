@@ -9,21 +9,22 @@ public class Main {
     public static void main(String[] args) {
         var stepNumber = "";
         var connectionNumber = 0;
+        var logger = new Logger();
 
         if (args.length > 0) {
             var argumentsList = new ArrayList<String>(Arrays.asList(args));
 
             for (var i = 0; i < argumentsList.size(); i++) {
                 if (Objects.equals(argumentsList.get(i), "--sn"))
-                    stepNumber = argumentsList.get(i+1);
+                    stepNumber = argumentsList.get(i + 1);
 
                 if (Objects.equals(argumentsList.get(i), "--cn"))
-                    connectionNumber = Integer.parseInt(argumentsList.get(i+1));
+                    connectionNumber = Integer.parseInt(argumentsList.get(i + 1));
             }
         }
 
-        System.out.println("Argument - Step No: " + stepNumber);
-        System.out.println("Argument - Connection No: " + connectionNumber);
+        logger.log(String.format("Argument - Step No: %s", stepNumber));
+        logger.log(String.format("Argument - Connection No: %s", connectionNumber));
 
         String finalStepNumber = stepNumber;
         var serverThread = new Thread(() -> {
@@ -32,7 +33,6 @@ public class Main {
         });
 
         serverThread.start();
-
-        System.out.println("Server thread is now up and waiting for connections");
+        logger.log("Server thread is now up and waiting for connections");
     }
 }

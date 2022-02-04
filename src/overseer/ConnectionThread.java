@@ -15,8 +15,11 @@ public class ConnectionThread extends Thread {
     static final String WORD_CONNECTION = "Connection:";
     static final String COMMAND_SPLITTER = ";";
     static final String WORD_SPLITTER = ":";
+    static final String STEP_MISMATCH_ERROR = "Step mismatch";
+    static final String EXCEPTION_THROWN = "Exception";
     // Info needed to verify and communicate with client
-    protected Socket socket;
+    private final Socket socket;
+    private final Logger logger;
     String serverSteps;
     String clientSteps;
     String clientConnectionId;
@@ -24,6 +27,7 @@ public class ConnectionThread extends Thread {
     public ConnectionThread(Socket clientSocket, String _steps) {
         this.socket = clientSocket;
         this.serverSteps = _steps;
+        logger = new Logger();
     }
 
     public void run() {
@@ -41,7 +45,9 @@ public class ConnectionThread extends Thread {
 
     private void closeSocket() throws IOException {
         this.socket.close();
-        System.out.println("Connection to socket gracefully terminated");
+        this.logger.log(
+                String.format("%s: Connection to socket gracefully terminated", clientConnectionId)
+        );
     }
 
     private boolean checkIfConnectionTerminated(String message) {
@@ -53,18 +59,19 @@ public class ConnectionThread extends Thread {
             var dataInputStream = new DataInputStream(socket.getInputStream());
             String message = dataInputStream.readUTF();
 
-            // Todo: Remove print in future
-            System.out.println("Message: " + message +
-                    ". On thread: " + Thread.currentThread());
+            // Todo: Remove print in future?
+            this.logger.log(String.format("Message: %s. On thread: %s", message, Thread.currentThread()));
 
             processMessage(message);
-
             return message;
         } catch (EOFException e) {
             // This is not a problem because this simply means that
             // the socket had no message to send, so move along
         } catch (Exception e) {
-            System.out.println("Exception thrown in ConnectionThread: " + e.getMessage());
+            this.logger.logError(
+                    String.format("Exception thrown in ConnectionThread: %s", e.getMessage()),
+                    EXCEPTION_THROWN
+            );
         }
         return "abort";
     }
@@ -97,10 +104,12 @@ public class ConnectionThread extends Thread {
                 return true;
             else {
                 socket.close();
-                throw new InvalidParameterException(String.format(
-                        "Steps do not match. Client: %s, Server: %s. " +
-                        "Connection to this client will be terminated.",
-                        clientSteps, serverSteps));
+                String errorMessage = String.format(
+                        "Steps do not match. Client: %s, Server: %s. Connection to this client will be terminated.",
+                        clientSteps, serverSteps);
+
+                logger.logError(errorMessage, STEP_MISMATCH_ERROR);
+                throw new InvalidParameterException(errorMessage);
             }
         }
         return false;
