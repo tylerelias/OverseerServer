@@ -16,6 +16,10 @@ public class Logger {
         System.out.printf("[%s] : [ERROR - %s] %s%n", getTimeStamp(), errorType, message);
     }
 
+    public void logWarning(String message, String warningType) {
+        System.out.printf("[%s] : [WARNING - %s] %s%n", getTimeStamp(), warningType, message);
+    }
+
     private String getTimeStamp() {
         return ZonedDateTime
                 .now(ZoneId.systemDefault())

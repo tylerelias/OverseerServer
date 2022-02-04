@@ -17,6 +17,7 @@ public class ConnectionThread extends Thread {
     static final String WORD_SPLITTER = ":";
     static final String STEP_MISMATCH_ERROR = "Step mismatch";
     static final String EXCEPTION_THROWN = "Exception";
+    static final String NO_MESSAGE = "no_message";
     // Info needed to verify and communicate with client
     private final Socket socket;
     private final Logger logger;
@@ -45,13 +46,12 @@ public class ConnectionThread extends Thread {
 
     private void closeSocket() throws IOException {
         this.socket.close();
-        this.logger.log(
-                String.format("%s: Connection to socket gracefully terminated", clientConnectionId)
-        );
+        this.logger.log(String.format("%s: Socket gracefully closed", clientConnectionId));
     }
 
     private boolean checkIfConnectionTerminated(String message) {
-        return !(message.equals(TERMINATE_CONNECTION) || message.equals(ABORT_CONNECTION));
+        return !(message.equals(TERMINATE_CONNECTION) ||
+                message.equals(ABORT_CONNECTION));
     }
 
     private String readMessageFromSocket(Socket socket) {
@@ -73,7 +73,7 @@ public class ConnectionThread extends Thread {
                     EXCEPTION_THROWN
             );
         }
-        return "abort";
+        return NO_MESSAGE;
     }
 
     private void processMessage(String message) throws IOException {
@@ -105,8 +105,8 @@ public class ConnectionThread extends Thread {
             else {
                 socket.close();
                 String errorMessage = String.format(
-                        "Steps do not match. Client: %s, Server: %s. Connection to this client will be terminated.",
-                        clientSteps, serverSteps);
+                        "Client: %s, Server: %s. Connection to client %s will be terminated.",
+                        clientSteps, serverSteps, clientConnectionId);
 
                 logger.logError(errorMessage, STEP_MISMATCH_ERROR);
                 throw new InvalidParameterException(errorMessage);
