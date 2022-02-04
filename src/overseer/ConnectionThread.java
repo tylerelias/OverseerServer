@@ -31,17 +31,21 @@ public class ConnectionThread extends Thread {
         try {
             while (isConnected) {
                 String message = readMessageFromSocket(this.socket);
-
-                if (message.equals(TERMINATE_CONNECTION) || message.equals(ABORT_CONNECTION))
-                    isConnected = false;
+                isConnected = checkIfConnectionTerminated(message);
             }
-
-            this.socket.close();
-            System.out.println("Connection to socket gracefully terminated");
-
+            closeSocket();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void closeSocket() throws IOException {
+        this.socket.close();
+        System.out.println("Connection to socket gracefully terminated");
+    }
+
+    private boolean checkIfConnectionTerminated(String message) {
+        return message.equals(TERMINATE_CONNECTION) || message.equals(ABORT_CONNECTION);
     }
 
     private String readMessageFromSocket(Socket socket) {
