@@ -4,10 +4,13 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
+import java.security.InvalidParameterException;
+import java.util.Objects;
 
 public class ConnectionThread extends Thread {
     // Constants come here, mostly for messages from/to client
     static final String TERMINATE_CONNECTION = "terminate";
+    static final String ABORT_CONNECTION = "abort";
     static final String WORD_STEP = "Step:";
     static final String WORD_CONNECTION = "Connection:";
     static final String COMMAND_SPLITTER = ";";
@@ -29,7 +32,7 @@ public class ConnectionThread extends Thread {
             while (isConnected) {
                 String message = readMessageFromSocket(this.socket);
 
-                if (message.equals(TERMINATE_CONNECTION))
+                if (message.equals(TERMINATE_CONNECTION) || message.equals(ABORT_CONNECTION))
                     isConnected = false;
             }
 
@@ -52,18 +55,19 @@ public class ConnectionThread extends Thread {
 
             processMessage(message);
 
-            return message.toString();
+            return message;
         } catch (EOFException e) {
             // This is not a problem because this simply means that
             // the socket had no message to send, so move along
         } catch (Exception e) {
             System.out.println("Exception thrown in ConnectionThread: " + e.getMessage());
+            return "abort";
         }
         // fugly, change this later
-        return "";
+        return "abort";
     }
 
-    private void processMessage(String message) {
+    private void processMessage(String message) throws IOException {
         var splitMessage = message.split(COMMAND_SPLITTER);
         var isConnectionIdSet = false;
         var isStepsSet = false;
@@ -71,16 +75,31 @@ public class ConnectionThread extends Thread {
         for(var word : splitMessage) {
             // prevent unnecessary lookups if we already got the id
             if(!isConnectionIdSet) isConnectionIdSet = checkForConnectionId(word);
-            // same as above, but for seps
+            // same as above, but for steps
             if(!isStepsSet) isStepsSet = checkForSteps(word);
         }
     }
 
-    private boolean checkForSteps(String word) {
+    private boolean validateSteps() {
+        return Objects.equals(clientSteps, serverSteps);
+    }
+
+    private boolean checkForSteps(String word) throws IOException {
         if (word.contains(WORD_STEP)) {
+
             var trimW = word.split(WORD_SPLITTER);
             setClientSteps(trimW[1]);
-            return true;
+            // Make sure that the client has the same steps sets as the server
+            // if that is not the case, the connection will be closed
+            if(validateSteps())
+                return true;
+            else {
+                socket.close();
+                throw new InvalidParameterException(String.format(
+                        "Steps do not match. Client: %s, Server: %s. " +
+                        "Connection to this client will be terminated.",
+                        clientSteps, serverSteps));
+            }
         }
         return false;
     }
