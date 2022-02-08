@@ -2,11 +2,10 @@ package overseer;
 
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Server {
-    static final Integer PORT = 4242;
+    private static final Integer PORT = 4242;
     private final Logger logger = new Logger();
 
 
@@ -14,7 +13,7 @@ public class Server {
         try {
             var serverSocket = new ServerSocket(PORT);
 
-            while (true) {
+            while(true) {
                 // keep an eye on this. Not a 100% sure but the check for the connectionLimit needs
                 // to be currentConnections < connectionLimit, not <=...
                 // could be that the last pass into the check blocks and waits on serverSocket.accept()?
@@ -29,7 +28,7 @@ public class Server {
             }
 
         } catch (Exception e) {
-            logger.logError(Arrays.toString(e.getStackTrace()), "Server");
+            logger.logServerError(e);
         }
     }
 }

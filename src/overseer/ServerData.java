@@ -5,6 +5,7 @@ public class ServerData {
     private String stepNumber;
     private Integer connectionLimit;
     private Integer currentConnections;
+    private final Logger logger = new Logger();
 
     ServerData(Server server, String stepNumber, Integer connectionLimit, Integer currentConnections) {
         this.server = server;
@@ -49,7 +50,7 @@ public class ServerData {
     }
 
     public void setCurrentConnections(Integer currentConnections) {
-        System.out.println("New current connections: " + currentConnections);
         this.currentConnections = currentConnections;
+        logger.logCurrentConnections(currentConnections);
     }
 }

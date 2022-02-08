@@ -16,13 +16,11 @@ public class ConnectionThread extends Thread {
     static final String WORD_CONNECTION = "Connection:";
     static final String COMMAND_SPLITTER = ";";
     static final String WORD_SPLITTER = ":";
-    static final String STEP_MISMATCH_ERROR = "Step mismatch";
-    static final String EXCEPTION_THROWN = "Exception";
     static final String NO_MESSAGE = "no_message";
     // Info needed to verify and communicate with client
     private final Socket socket;
     private final Logger logger;
-    private AtomicReference<ServerData> serverData;
+    private final AtomicReference<ServerData> serverData;
     String serverSteps;
     String clientSteps;
     String clientConnectionId;
@@ -50,7 +48,7 @@ public class ConnectionThread extends Thread {
     private void closeSocket() throws IOException {
         this.socket.close();
         this.serverData.get().setCurrentConnections(this.serverData.get().getCurrentConnections() - 1);
-        this.logger.log(String.format("%s: Socket gracefully closed", clientConnectionId));
+        this.logger.logSocketClosed(clientConnectionId);
     }
 
     private boolean checkIfConnectionTerminated(String message) {
@@ -62,20 +60,16 @@ public class ConnectionThread extends Thread {
         try {
             var dataInputStream = new DataInputStream(socket.getInputStream());
             String message = dataInputStream.readUTF();
-
             // Todo: Remove print in future?
-            this.logger.log(String.format("Message: %s. %s", message, Thread.currentThread()));
-
+            this.logger.logSocketMessage(message, Thread.currentThread().getName());
             processMessage(message);
+
             return message;
         } catch (EOFException e) {
             // This is not a problem because this simply means that
             // the socket had no message to send, so move along
         } catch (Exception e) {
-            this.logger.logError(
-                    String.format("Exception thrown in ConnectionThread: %s", e.getMessage()),
-                    EXCEPTION_THROWN
-            );
+            logger.logConnectionThreadExceptionError(e);
         }
         return NO_MESSAGE;
     }
@@ -100,20 +94,16 @@ public class ConnectionThread extends Thread {
     private boolean checkForSteps(String word) throws IOException {
         if (word.contains(WORD_STEP)) {
 
-            var trimW = word.split(WORD_SPLITTER);
-            setClientSteps(trimW[1]);
+            var splitWord = word.split(WORD_SPLITTER);
+            setClientSteps(splitWord[1]);
             // Make sure that the client has the same steps sets as the server
             // if that is not the case, the connection will be closed
             if(validateSteps())
                 return true;
             else {
                 socket.close();
-                String errorMessage = String.format(
-                        "Client: %s, Server: %s. Connection to client %s will be terminated.",
-                        clientSteps, serverSteps, clientConnectionId);
-
-                logger.logError(errorMessage, STEP_MISMATCH_ERROR);
-                throw new InvalidParameterException(errorMessage);
+                logger.logStepMismatchError(clientSteps, serverSteps, clientConnectionId);
+                throw new InvalidParameterException();
             }
         }
         return false;
