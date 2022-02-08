@@ -68,4 +68,8 @@ public class Logger {
                         connectionLimit, stepNumber),
                 ARGUMENT_WARNING);
     }
+
+    public void logConnectionLimitReached(Integer connectionLimit) {
+        log(String.format("The connection limit of %s has been reached.", connectionLimit));
+    }
 }
