@@ -29,7 +29,7 @@ public class ConnectionThread extends Thread {
         this.socket = clientSocket;
         this.serverData = serverData;
         this.serverSteps = serverData.get().getStepNumber();
-        logger = new Logger();
+        this.logger = new Logger();
     }
 
     public void run() {
