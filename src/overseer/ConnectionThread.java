@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ConnectionThread extends Thread {
     // Constants come here, mostly for messages from/to client
     static final String TERMINATE_CONNECTION = "terminate";
+    static final String LOST_CONNECTION = "disconnected";
     static final String ABORT_CONNECTION = "abort";
     static final String WORD_STEP = "Step:";
     static final String WORD_CONNECTION = "Connection:";
@@ -30,6 +31,7 @@ public class ConnectionThread extends Thread {
         this.serverData = serverData;
         this.serverSteps = serverData.get().getStepNumber();
         this.logger = new Logger();
+        this.clientConnectionId = String.valueOf(clientSocket.hashCode());
     }
 
     public void run() {
@@ -48,19 +50,25 @@ public class ConnectionThread extends Thread {
     private void closeSocket() throws IOException {
         this.socket.close();
         this.serverData.get().setCurrentConnections(this.serverData.get().getCurrentConnections() - 1);
+        if(!this.serverData.get().removeSocket(socket))
+            logger.logErrorSocketNotInSocketList(String.valueOf(socket.hashCode()));
         this.logger.logSocketClosed(clientConnectionId);
     }
 
     private boolean checkIfConnectionTerminated(String message) {
         return !(message.equals(TERMINATE_CONNECTION) ||
-                message.equals(ABORT_CONNECTION));
+                message.equals(ABORT_CONNECTION) ||
+                message.equals(LOST_CONNECTION));
     }
 
     private String readMessageFromSocket(Socket socket) {
         try {
+            if(socket.getInputStream().read() == -1) {
+                return LOST_CONNECTION;
+            }
             var dataInputStream = new DataInputStream(socket.getInputStream());
             String message = dataInputStream.readUTF();
-            // Todo: Remove print in future?
+            // TODO: Remove print in future?
             this.logger.logSocketMessage(message, Thread.currentThread().getName());
             processMessage(message);
 
@@ -93,7 +101,6 @@ public class ConnectionThread extends Thread {
 
     private boolean checkForSteps(String word) throws IOException {
         if (word.contains(WORD_STEP)) {
-
             var splitWord = word.split(WORD_SPLITTER);
             setClientSteps(splitWord[1]);
             // Make sure that the client has the same steps sets as the server

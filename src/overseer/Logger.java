@@ -72,4 +72,8 @@ public class Logger {
     public void logConnectionLimitReached(Integer connectionLimit) {
         log(String.format("The connection limit of %s has been reached.", connectionLimit));
     }
+
+    public void logErrorSocketNotInSocketList(String socketHash) {
+        logError(String.format("Socket %s was not found in the connected socket list", socketHash),"ConnectionThread");
+    }
 }
