@@ -6,9 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
 public class Logger {
-    static final String STEP_MISMATCH_ERROR = "Step mismatch";
-    static final String EXCEPTION_THROWN = "Exception";
-    static final String ARGUMENT_WARNING = "Arguments";
+
     //TODO: save this to a file
 
     private void log(String message) {
@@ -41,12 +39,12 @@ public class Logger {
         String errorMessage = String.format(
                 "Client: %s, Server: %s. Connection to client %s will be terminated.",
                 clientSteps, serverSteps, clientConnectionId);
-        logError(errorMessage, STEP_MISMATCH_ERROR);
+        logError(errorMessage, Constants.ERROR_STEP_MISMATCH);
     }
 
     public void logConnectionThreadExceptionError(Exception e) {
         logError(String.format("In ConnectionThread: %s", e.getMessage()),
-                EXCEPTION_THROWN);
+                Constants.EXCEPTION_THROWN);
         e.printStackTrace();
     }
 
@@ -67,7 +65,7 @@ public class Logger {
         logError(
                 String.format("Arguments are not in the correct format: Connection limit: %s, Step number: %s",
                         connectionLimit, stepNumber),
-                ARGUMENT_WARNING);
+                Constants.ARGUMENT_WARNING);
     }
 
     public void logConnectionLimitReached(Integer connectionLimit) {

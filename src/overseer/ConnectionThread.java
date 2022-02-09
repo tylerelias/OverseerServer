@@ -9,15 +9,6 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ConnectionThread extends Thread {
-    // Constants come here, mostly for messages from/to client
-    static final String TERMINATE_CONNECTION = "terminate";
-    static final String LOST_CONNECTION = "disconnected";
-    static final String ABORT_CONNECTION = "abort";
-    static final String WORD_STEP = "Step:";
-    static final String WORD_CONNECTION = "Connection:";
-    static final String COMMAND_SPLITTER = ";";
-    static final String WORD_SPLITTER = ":";
-    static final String NO_MESSAGE = "no_message";
     // Info needed to verify and communicate with client
     private final Socket socket;
     private final Logger logger;
@@ -56,15 +47,15 @@ public class ConnectionThread extends Thread {
     }
 
     private boolean checkIfConnectionTerminated(String message) {
-        return !(message.equals(TERMINATE_CONNECTION) ||
-                message.equals(ABORT_CONNECTION) ||
-                message.equals(LOST_CONNECTION));
+        return !(message.equals(Constants.TERMINATE_CONNECTION) ||
+                message.equals(Constants.ABORT_CONNECTION) ||
+                message.equals(Constants.DISCONNECTED));
     }
 
     private String readMessageFromSocket(Socket socket) {
         try {
             if (socket.getInputStream().read() == -1)
-                return LOST_CONNECTION;
+                return Constants.DISCONNECTED;
 
             String message = getDataInputStream();
             // TODO: Remove print in future?
@@ -76,9 +67,9 @@ public class ConnectionThread extends Thread {
             // the socket had no message to send, so move along
         } catch (Exception e) {
             logger.logConnectionThreadExceptionError(e);
-            return TERMINATE_CONNECTION;
+            return Constants.TERMINATE_CONNECTION;
         }
-        return NO_MESSAGE;
+        return Constants.NO_MESSAGE;
     }
 
     private String getDataInputStream() throws IOException {
@@ -87,7 +78,7 @@ public class ConnectionThread extends Thread {
     }
 
     private void processMessage(String message) throws IOException {
-        var splitMessage = message.split(COMMAND_SPLITTER);
+        var splitMessage = message.split(Constants.COMMAND_SPLITTER);
         var isConnectionIdSet = false;
         var isStepsSet = false;
 
@@ -105,8 +96,8 @@ public class ConnectionThread extends Thread {
     }
 
     private boolean checkForSteps(String word) throws IOException {
-        if (word.contains(WORD_STEP)) {
-            var splitWord = word.split(WORD_SPLITTER);
+        if (word.contains(Constants.WORD_STEP)) {
+            var splitWord = word.split(Constants.WORD_SPLITTER);
             setClientSteps(splitWord[1]);
             // Make sure that the client has the same steps sets as the server
             // if that is not the case, the connection will be closed
@@ -122,8 +113,8 @@ public class ConnectionThread extends Thread {
     }
 
     private boolean checkForConnectionId(String word) {
-        if (word.contains(WORD_CONNECTION)) {
-            var trimW = word.split(WORD_SPLITTER);
+        if (word.contains(Constants.WORD_CONNECTION)) {
+            var trimW = word.split(Constants.WORD_SPLITTER);
             setClientConnectionId(trimW[1]);
             return true;
         }

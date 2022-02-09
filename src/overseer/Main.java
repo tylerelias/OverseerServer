@@ -6,8 +6,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
-    private static final String CONNECTION_NUMBER_FLAG = "--cn";
-    private static final String STEP_NUMBER_FLAG = "--sn";
+
 
     public static void main(String[] args) {
         AtomicReference<ServerData> serverData = new AtomicReference<>();
@@ -19,10 +18,10 @@ public class Main {
             var argumentsList = new ArrayList<>(Arrays.asList(args));
 
             for (var i = 0; i < argumentsList.size(); i++) {
-                if (Objects.equals(argumentsList.get(i), STEP_NUMBER_FLAG))
+                if (Objects.equals(argumentsList.get(i), Constants.FLAG_STEP_NUMBER))
                     stepNumber = argumentsList.get(i + 1);
 
-                if (Objects.equals(argumentsList.get(i), CONNECTION_NUMBER_FLAG))
+                if (Objects.equals(argumentsList.get(i), Constants.FLAG_CONNECTION_NUMBER))
                     connectionLimit = Integer.parseInt(argumentsList.get(i + 1));
             }
         }
