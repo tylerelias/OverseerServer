@@ -63,23 +63,27 @@ public class ConnectionThread extends Thread {
 
     private String readMessageFromSocket(Socket socket) {
         try {
-            if(socket.getInputStream().read() == -1) {
+            if (socket.getInputStream().read() == -1)
                 return LOST_CONNECTION;
-            }
-            var dataInputStream = new DataInputStream(socket.getInputStream());
-            String message = dataInputStream.readUTF();
-            // TODO: Remove print in future?
-            this.logger.logSocketMessage(message, Thread.currentThread().getName());
-            processMessage(message);
 
+            String message = getDataInputStream();
+            // TODO: Remove print in future?
+            this.logger.logSocketMessage(message, String.valueOf(this.socket.hashCode()));
+            processMessage(message);
             return message;
         } catch (EOFException e) {
             // This is not a problem because this simply means that
             // the socket had no message to send, so move along
         } catch (Exception e) {
             logger.logConnectionThreadExceptionError(e);
+            return TERMINATE_CONNECTION;
         }
         return NO_MESSAGE;
+    }
+
+    private String getDataInputStream() throws IOException {
+        var dataInputStream = new DataInputStream(socket.getInputStream());
+        return dataInputStream.readUTF();
     }
 
     private void processMessage(String message) throws IOException {
@@ -87,11 +91,12 @@ public class ConnectionThread extends Thread {
         var isConnectionIdSet = false;
         var isStepsSet = false;
 
-        for(var word : splitMessage) {
+        for (var word : splitMessage) {
             // prevent unnecessary lookups if we already got the id
-            if(!isConnectionIdSet) isConnectionIdSet = checkForConnectionId(word);
+            if (!isConnectionIdSet) isConnectionIdSet = checkForConnectionId(word);
             // same as above, but for steps
-            if(!isStepsSet) isStepsSet = checkForSteps(word);
+            if (!isStepsSet) isStepsSet = checkForSteps(word);
+            //TODO: Steps
         }
     }
 
@@ -105,7 +110,7 @@ public class ConnectionThread extends Thread {
             setClientSteps(splitWord[1]);
             // Make sure that the client has the same steps sets as the server
             // if that is not the case, the connection will be closed
-            if(validateSteps())
+            if (validateSteps())
                 return true;
             else {
                 socket.close();
@@ -125,7 +130,7 @@ public class ConnectionThread extends Thread {
         return false;
     }
 
-    private void setClientConnectionId(String connectionId){
+    private void setClientConnectionId(String connectionId) {
         this.clientConnectionId = connectionId;
     }
 

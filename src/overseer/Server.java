@@ -2,6 +2,7 @@ package overseer;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,7 +27,7 @@ public class Server {
                 } else if (!isAtConnectionLimit){
                     isAtConnectionLimit = true;
                     logger.logConnectionLimitReached(serverData.get().getCurrentConnections());
-                    sendClientsMessage();
+                    sendAllClientsMessage("Simulation:all_clients_connected");
                     waitForConfirmationFromAllClients();
                 }
             }
@@ -40,16 +41,23 @@ public class Server {
         Socket socket = this.serverSocket.accept();
         this.serverData.get().addSocket(socket);
         new ConnectionThread(socket, this.serverData).start();
-        this.serverData.get().setCurrentConnections(this.serverData.get().getCurrentConnections() + 1);
+        this.serverData.get().incrementCurrentConnections();
     }
 
-    private void sendClientsMessage() {
+    private void sendAllClientsMessage(String message) throws InterruptedException {
+        // Add this 1.5 sec sleep, if it's not set, the newly connected socket sometimes misses the message.
+        // TODO: Try to find a more solid fix
+        Thread.sleep(1500);
+        System.out.println("Sending message to clients");
         var socketList = this.serverData.get().getConnectedSockets();
         socketList.forEach(s -> {
             try {
-                var dataOutputStream = new DataOutputStream(s.getOutputStream());
-                dataOutputStream.writeUTF("Simulation:all_clients_connected;Socket:" + s.hashCode());
-                dataOutputStream.flush();
+                if (!s.isClosed()) {
+                    var dataOutputStream = new DataOutputStream(s.getOutputStream());
+                    dataOutputStream.writeUTF(message);
+                    dataOutputStream.flush();
+                } else
+                    logger.logSocketClosed(String.format("Socket %s is closed", s.hashCode()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -62,5 +70,12 @@ public class Server {
         }
     }
 
+    private void simulateSteps() throws InterruptedException {
+        int stepNumber = Integer.parseInt(this.serverData.get().getStepNumber());
+        var connectedSockets = this.serverData.get().getConnectedSockets();
 
+        for(var i = 0; i < stepNumber; i++) {
+            sendAllClientsMessage("Step:" + stepNumber + 1);
+        }
+    }
 }

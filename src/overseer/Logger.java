@@ -45,8 +45,9 @@ public class Logger {
     }
 
     public void logConnectionThreadExceptionError(Exception e) {
-        logError(String.format("Exception thrown in ConnectionThread: %s", e.getMessage()),
+        logError(String.format("In ConnectionThread: %s", e.getMessage()),
                 EXCEPTION_THROWN);
+        e.printStackTrace();
     }
 
     public void logSocketClosed(String clientConnectionId) {
@@ -59,7 +60,7 @@ public class Logger {
 
     public void logArguments(String stepNumber, int connectionLimit) {
         log(String.format("Argument - Step No: %s", stepNumber));
-        log(String.format("Argument - Connection No: %s", connectionLimit));
+        log(String.format("Argument - Connection limit: %s", connectionLimit));
     }
 
     public void logIncorrectArgumentsWarning(String stepNumber, int connectionLimit) {
