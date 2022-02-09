@@ -2,7 +2,6 @@ package overseer;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,8 +43,7 @@ public class Server {
         this.serverData.get().incrementCurrentConnections();
     }
 
-    private void sendAllClientsMessage(String message) throws InterruptedException {
-        System.out.println("Sending message to clients");
+    private void sendAllClientsMessage(String message) {
         var socketList = this.serverData.get().getConnectedSockets();
         socketList.forEach(s -> {
             try {
@@ -67,7 +65,7 @@ public class Server {
         }
     }
 
-    private void simulateSteps() throws InterruptedException {
+    private void simulateSteps() {
         int stepNumber = Integer.parseInt(this.serverData.get().getStepNumber());
         var connectedSockets = this.serverData.get().getConnectedSockets();
 
