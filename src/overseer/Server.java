@@ -45,9 +45,6 @@ public class Server {
     }
 
     private void sendAllClientsMessage(String message) throws InterruptedException {
-        // Add this 1.5 sec sleep, if it's not set, the newly connected socket sometimes misses the message.
-        // TODO: Try to find a more solid fix
-        Thread.sleep(1500);
         System.out.println("Sending message to clients");
         var socketList = this.serverData.get().getConnectedSockets();
         socketList.forEach(s -> {
