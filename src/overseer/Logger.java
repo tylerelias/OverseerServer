@@ -63,8 +63,8 @@ public class Logger {
         log(String.format("Argument - Connection limit: %s", connectionLimit));
     }
 
-    public void logIncorrectArgumentsWarning(String stepNumber, int connectionLimit) {
-        logWarning(
+    public void logIncorrectArgumentsError(String stepNumber, int connectionLimit) {
+        logError(
                 String.format("Arguments are not in the correct format: Connection limit: %s, Step number: %s",
                         connectionLimit, stepNumber),
                 ARGUMENT_WARNING);

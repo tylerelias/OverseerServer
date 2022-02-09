@@ -12,22 +12,25 @@ public class Server {
     private AtomicReference<ServerData> serverData;
     private ServerSocket serverSocket;
 
-
     public void start(AtomicReference<ServerData> serverData) {
         this.serverData = serverData;
         try {
             this.serverSocket = new ServerSocket(PORT);
             var isAtConnectionLimit = false;
 
-            while(true) {
+            while(!this.serverSocket.isClosed()) {
                if(serverData.get().checkIfAllClientsConnected()) {
                     isAtConnectionLimit = false;
                     createConnectionThread();
-                } else if (!isAtConnectionLimit){
+                }
+               else if(!isAtConnectionLimit) {
                     isAtConnectionLimit = true;
                     logger.logConnectionLimitReached(serverData.get().getCurrentConnections());
-                    sendAllClientsMessage("Simulation:all_clients_connected");
-                    waitForConfirmationFromAllClients();
+                    sendAllClientsMessage(
+                            "Clients:all_clients_connected;Step:"
+                                    + (this.serverData.get().getCurrentStep() + 1)
+                    );
+                    waitForResponseFromAllClients();
                 }
             }
 
@@ -48,18 +51,22 @@ public class Server {
         socketList.forEach(s -> {
             try {
                 if (!s.isClosed()) {
-                    var dataOutputStream = new DataOutputStream(s.getOutputStream());
-                    dataOutputStream.writeUTF(message);
-                    dataOutputStream.flush();
+                    writeMessageToSocket(s, message);
                 } else
                     logger.logSocketClosed(String.format("Socket %s is closed", s.hashCode()));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         });
     }
 
-    private void waitForConfirmationFromAllClients() {
+    private void writeMessageToSocket(Socket s, String message) throws IOException {
+        var dataOutputStream = new DataOutputStream(s.getOutputStream());
+        dataOutputStream.writeUTF(message);
+        dataOutputStream.flush();
+    }
+
+    private void waitForResponseFromAllClients() {
         while (this.serverData.get().checkIfAllClientsConnected()) {
 
         }

@@ -28,7 +28,7 @@ public class Main {
         }
 
         if(connectionLimit <= 0 || stepNumber == null) {
-            logger.logIncorrectArgumentsWarning(stepNumber, connectionLimit);
+            logger.logIncorrectArgumentsError(stepNumber, connectionLimit);
             System.exit(0);
         }
 

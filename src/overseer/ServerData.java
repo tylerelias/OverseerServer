@@ -23,7 +23,7 @@ public class ServerData {
         this.connectionLimit = connectionLimit;
         this.currentConnections = currentConnections;
         this.connectedSockets = new ArrayList<>();
-        this.currentStep = 0;
+        this.currentStep = 1;
     }
 
     ServerData() {
@@ -32,7 +32,7 @@ public class ServerData {
         this.connectionLimit = 0;
         this.currentConnections = 0;
         this.connectedSockets = new ArrayList<>();
-        this.currentStep = 0;
+        this.currentStep = 1;
     }
 
     public Server getServer() {
