@@ -89,7 +89,6 @@ public class Server {
     }
 
     private void waitForAllClientsToCompleteSteps() {
-        System.out.println("SERVER: Waiting for responses...");
         var haveAllCompletedSteps = false;
         var serverStep = this.serverData.get().getCurrentStep();
         while (!haveAllCompletedSteps) {
@@ -106,7 +105,6 @@ public class Server {
                 }
             }
         }
-        System.out.println("SERVER: All have completed their step! :" + this.serverData.get().getCurrentStep());
     }
 
     private void simulateSteps() {
