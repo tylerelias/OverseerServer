@@ -18,16 +18,8 @@ public class ConnectedSockets {
         return socket;
     }
 
-    public void setSocket(Socket socket) {
-        this.socket = socket;
-    }
-
     public AtomicInteger getCurrentStep() {
         return currentStep;
-    }
-
-    public void setCurrentStep(Integer currentStep) {
-        this.currentStep = new AtomicInteger(currentStep);
     }
 
     public void incrementCurrentStep() {
@@ -36,9 +28,5 @@ public class ConnectedSockets {
 
     public int getClientId() {
         return clientId;
-    }
-
-    public void setClientId(int clientId) {
-        this.clientId = clientId;
     }
 }

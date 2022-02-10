@@ -10,17 +10,17 @@ import java.util.concurrent.atomic.AtomicInteger;
     and sockets will need to access and modify while the simulation is running.
  */
 public class ServerData {
-    private Integer totalSteps;                  // total steps that the simulation will take
-    private AtomicInteger currentStep;                // the current step in the simulation
-    private Integer connectionLimit;            // connection limit set by the Overseer
-    private Integer currentConnections;         // current amount of connected sockets
+    private final Integer totalSteps;                  // total steps that the simulation will take
+    private final AtomicInteger currentStep;                // the current step in the simulation
+    private final Integer connectionLimit;            // connection limit set by the Overseer
+    private final AtomicInteger currentConnections;         // current amount of connected sockets
     private final Logger logger = new Logger(); // to log stuff that goes down
     private final ArrayList<ConnectedSockets> connectedSockets; // Puts all the sockets in a nice ArrayList
 
     ServerData(Integer totalSteps, Integer connectionLimit, Integer currentConnections) {
         this.totalSteps = totalSteps;
         this.connectionLimit = connectionLimit;
-        this.currentConnections = currentConnections;
+        this.currentConnections = new AtomicInteger(currentConnections);
         this.connectedSockets = new ArrayList<>();
         this.currentStep = new AtomicInteger(1);
     }
@@ -29,34 +29,26 @@ public class ServerData {
         return totalSteps;
     }
 
-    public void setTotalSteps(Integer totalSteps) {
-        this.totalSteps = totalSteps;
-    }
-
     public Integer getConnectionLimit() {
         return connectionLimit;
     }
 
-    public void setConnectionLimit(int connectionLimit) {
-        this.connectionLimit = connectionLimit;
-    }
-
-    public Integer getCurrentConnections() {
+    public AtomicInteger getCurrentConnections() {
         return currentConnections;
     }
 
     public void incrementCurrentConnections() {
-        this.currentConnections++;
-        logger.logCurrentConnections(this.currentConnections);
+        this.currentConnections.incrementAndGet();
+        logger.logCurrentConnections(this.currentConnections.get());
     }
 
     public void decrementCurrentConnections() {
-        this.currentConnections--;
-        logger.logCurrentConnections(this.currentConnections);
+        this.currentConnections.decrementAndGet();
+        logger.logCurrentConnections(this.currentConnections.get());
     }
 
     public boolean checkIfAllClientsConnected() {
-        return !Objects.equals(getCurrentConnections(), getConnectionLimit());
+        return !Objects.equals(getCurrentConnections().get(), getConnectionLimit());
     }
 
     public void addSocket(Socket socket, int clientId, int currentStep) {
@@ -68,9 +60,9 @@ public class ServerData {
     }
 
     public ConnectedSockets getConnectedSocketByClientId(Integer clientId) {
-        for (var val : this.connectedSockets) {
-            if(val.getClientId() == clientId)
-                return val;
+        for (var socket : this.connectedSockets) {
+            if(socket.getClientId() == clientId)
+                return socket;
         }
         throw new NoSuchElementException();
     }
@@ -99,10 +91,6 @@ public class ServerData {
 
     public AtomicInteger getCurrentStep() {
         return this.currentStep;
-    }
-
-    public void setCurrentStep(AtomicInteger currentStep) {
-        this.currentStep = currentStep;
     }
 
     public void incrementCurrentStep() {

@@ -25,16 +25,16 @@ public class Server {
                     createConnectionThread();
                 } else if (!isAtConnectionLimit) {
                     isAtConnectionLimit = true;
-                    logger.logConnectionLimitReached(serverData.getCurrentConnections());
+                    logger.logConnectionLimitReached(serverData.getCurrentConnections().get());
                 }
                 if (isAtConnectionLimit && areAllConnectionThreadsAtSameStep()) {
-                    var nextStep = this.serverData.getCurrentStep().get() + 1;
+                    this.serverData.incrementCurrentStep();
                     sendAllClientsMessage(
                             Constants.PREFIX_CLIENTS +
                                     Constants.COMMAND_ALL_CLIENTS_CONNECTED +
                                     Constants.COMMAND_SPLITTER +
                                     Constants.PREFIX_NEXT_STEP
-                                    + nextStep
+                                    + (this.serverData.getCurrentStep().get())
                     );
                     //todo: only call once a simulationBegin = true has been made
                     waitForAllClientsToCompleteSteps();
@@ -47,10 +47,8 @@ public class Server {
     }
 
     private boolean areAllConnectionThreadsAtSameStep() {
-        var currentServerStep = this.serverData.getCurrentStep().get();
         for (ConnectedSockets s : this.serverData.getConnectedSockets()) {
-            var socketStep = s.getCurrentStep().get();
-            if (socketStep != currentServerStep)
+            if (s.getCurrentStep().get() != this.serverData.getCurrentStep().get())
                 return false;
         }
         return true;
@@ -96,7 +94,7 @@ public class Server {
                 if (Objects.equals(connectedSocket.getCurrentStep().get(), this.serverData.getCurrentStep().get()))
                     completed++;
                 
-                if (completed == this.serverData.getCurrentConnections()) {
+                if (completed == this.serverData.getCurrentConnections().get()) {
                     haveAllCompletedSteps = true;
                     this.serverData.incrementCurrentStep();
                     break;

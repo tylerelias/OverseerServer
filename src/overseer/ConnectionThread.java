@@ -18,6 +18,7 @@ public class ConnectionThread extends Thread {
         this.socket = clientSocket;
         this.serverData = serverData;
         this.logger = new Logger();
+        this.clientId = 0;
     }
 
     // Socket will keep reading/writing messages as long as the connection
@@ -83,17 +84,16 @@ public class ConnectionThread extends Thread {
 
         for (var word : splitMessage) {
             // prevent unnecessary lookups if we already got the id
-            if (!isConnectionIdSet) isConnectionIdSet = checkForConnectionId(word);
+            if (!isConnectionIdSet || this.clientId == 0) isConnectionIdSet = checkForConnectionId(word);
             // same as above, but for steps
             if (!isStepsSet) isStepsSet = checkForSteps(word);
         }
     }
 
     private boolean validateSteps(Integer completedStep) {
-        return Objects.equals(
-                completedStep,
-                this.serverData.getCurrentStep().get()
-        );
+        return  Objects.equals(this.serverData.getConnectedSockedStepByClientId(this.clientId),
+                this.serverData.getCurrentStep().get()) ||
+                completedStep == this.serverData.getCurrentStep().get();
     }
 
     private boolean checkForSteps(String word)  {
@@ -105,13 +105,9 @@ public class ConnectionThread extends Thread {
                 return true;
             }
             else {
-                var clientSteps = this.serverData
-                        .getConnectedSockedStepByClientId(this.clientId);
                 var serverSteps = this.serverData
                         .getCurrentStep()
                         .get();
-                System.out.printf("ERROR: Client: %s, Server: %s, NextStep: %s %n",
-                        clientSteps, serverSteps, completedStep);
                 logger.logStepMismatchError(completedStep, serverSteps, this.clientId);
             }
         }
