@@ -13,9 +13,17 @@ public class Constants {
     static final String DISCONNECTED = "disconnected";
     static final String ABORT_CONNECTION = "abort";
     static final String NO_MESSAGE = "no_message";
+    //prefix:
+    static final String PREFIX_NEXT_STEP = "NextStep:";
+    static final String PREFIX_CURRENT_STEP = "CurrentStep:";
+    static final String PREFIX_CLIENT_ID = "ClientID:";
+    static final String PREFIX_CLIENTS = "Clients:";
+    static final String PREFIX_CONNECTION = "Connection:";
     // Command related
-    static final String WORD_STEP = "Step:";
-    static final String WORD_CONNECTION = "Connection:";
+    static final String COMMAND_ALL_CLIENTS_CONNECTED = "all_clients_connected:";
     static final String COMMAND_SPLITTER = ";";
-    static final String WORD_SPLITTER = ":";
+    static final String COLON = ":";
+
+    // Standard text for logs
+    static final String SOCKET_IS_CLOSED = "Socket %s is closed";
 }

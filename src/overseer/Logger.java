@@ -28,14 +28,14 @@ public class Logger {
     }
 
     public void logCurrentConnections(Integer currentConnections) {
-        log(String.format("Current connected clients: %s", currentConnections));
+        log(String.format("Connected client(s): %s", currentConnections));
     }
 
     public void logServerError(Exception e) {
         logError(Arrays.toString(e.getStackTrace()), "Server");
     }
 
-    public void logStepMismatchError(String clientSteps, String serverSteps, String clientConnectionId) {
+    public void logStepMismatchError(String clientSteps, String serverSteps, Integer clientConnectionId) {
         String errorMessage = String.format(
                 "Client: %s, Server: %s. Connection to client %s will be terminated.",
                 clientSteps, serverSteps, clientConnectionId);
@@ -48,7 +48,7 @@ public class Logger {
         e.printStackTrace();
     }
 
-    public void logSocketClosed(String clientConnectionId) {
+    public void logSocketClosed(Integer clientConnectionId) {
         log(String.format("%s: Socket gracefully closed", clientConnectionId));
     }
 
@@ -57,7 +57,7 @@ public class Logger {
     }
 
     public void logArguments(String stepNumber, int connectionLimit) {
-        log(String.format("Argument - Step No: %s", stepNumber));
+        log(String.format("Argument - Total Steps: %s", stepNumber));
         log(String.format("Argument - Connection limit: %s", connectionLimit));
     }
 
@@ -72,7 +72,7 @@ public class Logger {
         log(String.format("The connection limit of %s has been reached.", connectionLimit));
     }
 
-    public void logErrorSocketNotInSocketList(String socketHash) {
-        logError(String.format("Socket %s was not found in the connected socket list", socketHash),"ConnectionThread");
+    public void logErrorSocketNotInSocketList(Integer clientId) {
+        logError(String.format("Socket %s was not found in the connected socket list", clientId),"ConnectionThread");
     }
 }

@@ -15,21 +15,22 @@ public class ConnectionThread extends Thread {
     private final AtomicReference<ServerData> serverData;
     String serverSteps;
     String clientSteps;
-    String clientConnectionId;
+    Integer clientId;
 
     public ConnectionThread(Socket clientSocket, AtomicReference<ServerData> serverData) {
         this.socket = clientSocket;
         this.serverData = serverData;
         this.serverSteps = serverData.get().getStepNumber();
         this.logger = new Logger();
-        this.clientConnectionId = String.valueOf(clientSocket.hashCode());
     }
 
+    // Socket will keep reading/writing messages as long as the connection
+    // to the server is alive
     public void run() {
         boolean isConnected = true;
         try {
-            while (isConnected) {
-                String message = readMessageFromSocket(this.socket);
+            while (isConnected && !this.socket.isClosed()) {
+                String message = readMessageFromSocket();
                 isConnected = checkIfConnectionTerminated(message);
             }
             closeSocket();
@@ -38,12 +39,17 @@ public class ConnectionThread extends Thread {
         }
     }
 
+    // Close the socket and remove it from the serverData's currently connected sockets
     private void closeSocket() throws IOException {
         this.socket.close();
-        this.serverData.get().setCurrentConnections(this.serverData.get().getCurrentConnections() - 1);
-        if(!this.serverData.get().removeSocket(socket))
-            logger.logErrorSocketNotInSocketList(String.valueOf(socket.hashCode()));
-        this.logger.logSocketClosed(clientConnectionId);
+        this.serverData
+                .get()
+                .decrementCurrentConnections();
+
+        if(!this.serverData.get().removeSocketByClientId(this.clientId))
+            logger.logErrorSocketNotInSocketList(this.clientId);
+
+        this.logger.logSocketClosed(this.clientId);
     }
 
     private boolean checkIfConnectionTerminated(String message) {
@@ -52,11 +58,8 @@ public class ConnectionThread extends Thread {
                 message.equals(Constants.DISCONNECTED));
     }
 
-    private String readMessageFromSocket(Socket socket) {
+    private String readMessageFromSocket() throws IOException {
         try {
-            if (socket.getInputStream().read() == -1)
-                return Constants.DISCONNECTED;
-
             String message = getDataInputStream();
             // TODO: Remove print in future?
             this.logger.logSocketMessage(message, String.valueOf(this.socket.hashCode()));
@@ -69,6 +72,7 @@ public class ConnectionThread extends Thread {
             logger.logConnectionThreadExceptionError(e);
             return Constants.TERMINATE_CONNECTION;
         }
+        this.socket.close();
         return Constants.NO_MESSAGE;
     }
 
@@ -92,20 +96,17 @@ public class ConnectionThread extends Thread {
     }
 
     private boolean validateSteps() {
-        return Objects.equals(clientSteps, serverSteps);
+        return Objects.equals(Integer.parseInt(clientSteps), this.serverData.get().getCurrentStep());
     }
 
-    private boolean checkForSteps(String word) throws IOException {
-        if (word.contains(Constants.WORD_STEP)) {
-            var splitWord = word.split(Constants.WORD_SPLITTER);
+    private boolean checkForSteps(String word) {
+        if (word.contains(Constants.PREFIX_NEXT_STEP)) {
+            var splitWord = word.split(Constants.COLON);
             setClientSteps(splitWord[1]);
-            // Make sure that the client has the same steps sets as the server
-            // if that is not the case, the connection will be closed
             if (validateSteps())
                 return true;
             else {
-                socket.close();
-                logger.logStepMismatchError(clientSteps, serverSteps, clientConnectionId);
+                logger.logStepMismatchError(clientSteps, serverSteps, this.clientId);
                 throw new InvalidParameterException();
             }
         }
@@ -113,16 +114,16 @@ public class ConnectionThread extends Thread {
     }
 
     private boolean checkForConnectionId(String word) {
-        if (word.contains(Constants.WORD_CONNECTION)) {
-            var trimW = word.split(Constants.WORD_SPLITTER);
-            setClientConnectionId(trimW[1]);
+        if (word.contains(Constants.PREFIX_CLIENT_ID)) {
+            var splitWord = word.split(Constants.COLON);
+            setClientId(Integer.valueOf(splitWord[1]));
             return true;
         }
         return false;
     }
 
-    private void setClientConnectionId(String connectionId) {
-        this.clientConnectionId = connectionId;
+    private void setClientId(Integer connectionId) {
+        this.clientId = connectionId;
     }
 
     private void setClientSteps(String steps) {

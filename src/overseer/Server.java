@@ -14,6 +14,7 @@ public class Server {
 
     public void start(AtomicReference<ServerData> serverData) {
         this.serverData = serverData;
+
         try {
             this.serverSocket = new ServerSocket(PORT);
             var isAtConnectionLimit = false;
@@ -27,8 +28,11 @@ public class Server {
                     isAtConnectionLimit = true;
                     logger.logConnectionLimitReached(serverData.get().getCurrentConnections());
                     sendAllClientsMessage(
-                            "Clients:all_clients_connected;Step:"
-                                    + (this.serverData.get().getCurrentStep() + 1)
+                            Constants.PREFIX_CLIENTS +
+                            Constants.COMMAND_ALL_CLIENTS_CONNECTED +
+                            Constants.COMMAND_SPLITTER +
+                            Constants.PREFIX_NEXT_STEP
+                            + (this.serverData.get().getCurrentStep() + 1)
                     );
                     waitForResponseFromAllClients();
                 }
@@ -41,7 +45,7 @@ public class Server {
 
     private void createConnectionThread() throws IOException {
         Socket socket = this.serverSocket.accept();
-        this.serverData.get().addSocket(socket);
+        this.serverData.get().addSocket(socket, socket.hashCode(), this.serverData.get().getCurrentStep());
         new ConnectionThread(socket, this.serverData).start();
         this.serverData.get().incrementCurrentConnections();
     }
@@ -50,10 +54,15 @@ public class Server {
         var socketList = this.serverData.get().getConnectedSockets();
         socketList.forEach(s -> {
             try {
-                if (!s.isClosed()) {
-                    writeMessageToSocket(s, message);
+                var sSocket = s.getSocket();
+                if (!sSocket.isClosed()) {
+                    writeMessageToSocket(sSocket,
+                            Constants.PREFIX_CLIENT_ID +
+                            sSocket.hashCode() +
+                            Constants.COMMAND_SPLITTER +
+                            message);
                 } else
-                    logger.logSocketClosed(String.format("Socket %s is closed", s.hashCode()));
+                    logger.logSocketClosed(s.hashCode());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -67,9 +76,10 @@ public class Server {
     }
 
     private void waitForResponseFromAllClients() {
-        while (this.serverData.get().checkIfAllClientsConnected()) {
-
-        }
+        System.out.println("Waiting for responses...");
+//        while (this.serverData.get().checkIfAllClientsConnected()) {
+//
+//        }
     }
 
     private void simulateSteps() {
@@ -77,7 +87,7 @@ public class Server {
         var connectedSockets = this.serverData.get().getConnectedSockets();
 
         for(var i = 0; i < stepNumber; i++) {
-            sendAllClientsMessage("Step:" + stepNumber + 1);
+            sendAllClientsMessage(Constants.PREFIX_NEXT_STEP + Constants.COLON + stepNumber + 1);
         }
     }
 }
