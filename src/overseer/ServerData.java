@@ -6,17 +6,16 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 
 /*  This class stores all the vital information that the server holds
-    and sockets will need to access and modify while the simulation
-    is running.
+    and sockets will need to access and modify while the simulation is running.
  */
 public class ServerData {
-    private Server server;
-    private String stepNumber;
-    private Integer currentStep;
-    private Integer connectionLimit;
-    private Integer currentConnections;
-    private final Logger logger = new Logger();
-    private final ArrayList<ConnectedSockets> connectedSockets;
+    private Server server;                      // Overseer server data TODO: not needed? remove?
+    private String stepNumber;                  // total steps that the simulation will take
+    private Integer currentStep;                // the current step in the simulation
+    private Integer connectionLimit;            // connection limit set by the Overseer
+    private Integer currentConnections;         // current amount of connected sockets
+    private final Logger logger = new Logger(); // to log stuff that goes down
+    private final ArrayList<ConnectedSockets> connectedSockets; // Puts all the sockets in a nice ArrayList
 
     ServerData(Server server, String stepNumber, Integer connectionLimit, Integer currentConnections) {
         this.server = server;
@@ -96,6 +95,22 @@ public class ServerData {
 
     public boolean removeSocketByClientId(Integer clientId) {
         return this.connectedSockets.removeIf(val -> val.getClientId() == clientId);
+    }
+
+    public int incrementStepOfConnectedSocketByClientId(Integer clientId) {
+        for (var val : this.connectedSockets) {
+            if(val.getClientId() == clientId)
+                return val.incrementCurrentStep();
+        }
+        throw new NoSuchElementException();
+    }
+
+    public int getConnectedSockedStepByClientId(Integer clientId) {
+        for (var val : this.connectedSockets) {
+            if(val.getClientId() == clientId)
+                return val.getCurrentStep();
+        }
+        throw new NoSuchElementException();
     }
 
     public Integer getCurrentStep() {

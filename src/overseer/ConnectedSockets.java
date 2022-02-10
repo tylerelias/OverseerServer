@@ -29,6 +29,10 @@ public class ConnectedSockets {
         this.currentStep = currentStep;
     }
 
+    public int incrementCurrentStep() {
+        return this.currentStep++;
+    }
+
     public int getClientId() {
         return clientId;
     }

@@ -13,15 +13,14 @@ public class ConnectionThread extends Thread {
     private final Socket socket;
     private final Logger logger;
     private final AtomicReference<ServerData> serverData;
-    String serverSteps;
-    String clientSteps;
+    Integer clientSteps;
     Integer clientId;
 
     public ConnectionThread(Socket clientSocket, AtomicReference<ServerData> serverData) {
         this.socket = clientSocket;
         this.serverData = serverData;
-        this.serverSteps = serverData.get().getStepNumber();
         this.logger = new Logger();
+        this.clientSteps = 1;
     }
 
     // Socket will keep reading/writing messages as long as the connection
@@ -81,7 +80,7 @@ public class ConnectionThread extends Thread {
         return dataInputStream.readUTF();
     }
 
-    private void processMessage(String message) throws IOException {
+    private void processMessage(String message) {
         var splitMessage = message.split(Constants.COMMAND_SPLITTER);
         var isConnectionIdSet = false;
         var isStepsSet = false;
@@ -95,17 +94,22 @@ public class ConnectionThread extends Thread {
         }
     }
 
-    private boolean validateSteps() {
-        return Objects.equals(Integer.parseInt(clientSteps), this.serverData.get().getCurrentStep());
+    private boolean validateSteps(Integer nextStep) {
+        return Objects.equals(nextStep, this.serverData.get().getCurrentStep() + 1);
     }
 
     private boolean checkForSteps(String word) {
-        if (word.contains(Constants.PREFIX_NEXT_STEP)) {
-            var splitWord = word.split(Constants.COLON);
-            setClientSteps(splitWord[1]);
-            if (validateSteps())
+        if (word.contains(Constants.PREFIX_CURRENT_STEP)) {
+            var nextStep = word.split(Constants.COLON)[1];
+
+            if (validateSteps(Integer.valueOf(nextStep))) {
+                this.clientSteps = this.serverData
+                        .get()
+                        .incrementStepOfConnectedSocketByClientId(this.clientId);
                 return true;
+            }
             else {
+                var serverSteps = this.serverData.get().getCurrentStep();
                 logger.logStepMismatchError(clientSteps, serverSteps, this.clientId);
                 throw new InvalidParameterException();
             }
@@ -122,11 +126,7 @@ public class ConnectionThread extends Thread {
         return false;
     }
 
-    private void setClientId(Integer connectionId) {
-        this.clientId = connectionId;
-    }
-
-    private void setClientSteps(String steps) {
-        this.clientSteps = steps;
+    private void setClientId(Integer clientId) {
+        this.clientId = clientId;
     }
 }

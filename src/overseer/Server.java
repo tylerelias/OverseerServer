@@ -34,7 +34,7 @@ public class Server {
                             Constants.PREFIX_NEXT_STEP
                             + (this.serverData.get().getCurrentStep() + 1)
                     );
-                    waitForResponseFromAllClients();
+                    waitForAllClientsToCompleteSteps();
                 }
             }
 
@@ -75,11 +75,9 @@ public class Server {
         dataOutputStream.flush();
     }
 
-    private void waitForResponseFromAllClients() {
+    private void waitForAllClientsToCompleteSteps() {
         System.out.println("Waiting for responses...");
-//        while (this.serverData.get().checkIfAllClientsConnected()) {
-//
-//        }
+
     }
 
     private void simulateSteps() {
@@ -87,7 +85,7 @@ public class Server {
         var connectedSockets = this.serverData.get().getConnectedSockets();
 
         for(var i = 0; i < stepNumber; i++) {
-            sendAllClientsMessage(Constants.PREFIX_NEXT_STEP + Constants.COLON + stepNumber + 1);
+            sendAllClientsMessage(Constants.PREFIX_NEXT_STEP + stepNumber + 1);
         }
     }
 }

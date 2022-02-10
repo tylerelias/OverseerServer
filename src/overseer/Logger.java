@@ -35,7 +35,7 @@ public class Logger {
         logError(Arrays.toString(e.getStackTrace()), "Server");
     }
 
-    public void logStepMismatchError(String clientSteps, String serverSteps, Integer clientConnectionId) {
+    public void logStepMismatchError(Integer clientSteps, Integer serverSteps, Integer clientConnectionId) {
         String errorMessage = String.format(
                 "Client: %s, Server: %s. Connection to client %s will be terminated.",
                 clientSteps, serverSteps, clientConnectionId);
