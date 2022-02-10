@@ -1,15 +1,16 @@
 package overseer;
 
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectedSockets {
     private int clientId;
     private Socket socket;
-    private int currentStep;
+    private AtomicInteger currentStep;
 
-    ConnectedSockets(Socket socket, int clientId, int currentStep) {
+    ConnectedSockets(Socket socket, int clientId, Integer currentStep) {
         this.socket = socket;
-        this.currentStep = currentStep;
+        this.currentStep = new AtomicInteger(currentStep);
         this.clientId = clientId;
     }
 
@@ -21,16 +22,16 @@ public class ConnectedSockets {
         this.socket = socket;
     }
 
-    public int getCurrentStep() {
+    public AtomicInteger getCurrentStep() {
         return currentStep;
     }
 
-    public void setCurrentStep(int currentStep) {
-        this.currentStep = currentStep;
+    public void setCurrentStep(Integer currentStep) {
+        this.currentStep = new AtomicInteger(currentStep);
     }
 
-    public int incrementCurrentStep() {
-        return this.currentStep++;
+    public void incrementCurrentStep() {
+        this.currentStep.incrementAndGet();
     }
 
     public int getClientId() {

@@ -4,13 +4,14 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /*  This class stores all the vital information that the server holds
     and sockets will need to access and modify while the simulation is running.
  */
 public class ServerData {
     private Integer totalSteps;                  // total steps that the simulation will take
-    private Integer currentStep;                // the current step in the simulation
+    private AtomicInteger currentStep;                // the current step in the simulation
     private Integer connectionLimit;            // connection limit set by the Overseer
     private Integer currentConnections;         // current amount of connected sockets
     private final Logger logger = new Logger(); // to log stuff that goes down
@@ -21,7 +22,7 @@ public class ServerData {
         this.connectionLimit = connectionLimit;
         this.currentConnections = currentConnections;
         this.connectedSockets = new ArrayList<>();
-        this.currentStep = 1;
+        this.currentStep = new AtomicInteger(1);
     }
 
     public Integer getTotalSteps() {
@@ -91,20 +92,20 @@ public class ServerData {
     public int getConnectedSockedStepByClientId(Integer clientId) {
         for (var socket : this.connectedSockets) {
             if(socket.getClientId() == clientId)
-                return socket.getCurrentStep();
+                return socket.getCurrentStep().get();
         }
         throw new NoSuchElementException();
     }
 
-    public Integer getCurrentStep() {
-        return currentStep;
+    public AtomicInteger getCurrentStep() {
+        return this.currentStep;
     }
 
-    public void setCurrentStep(Integer currentStep) {
+    public void setCurrentStep(AtomicInteger currentStep) {
         this.currentStep = currentStep;
     }
 
     public void incrementCurrentStep() {
-        this.currentStep++;
+        this.currentStep.incrementAndGet();
     }
 }

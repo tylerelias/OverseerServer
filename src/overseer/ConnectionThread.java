@@ -4,19 +4,17 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
-import java.security.InvalidParameterException;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class ConnectionThread extends Thread {
     // Info needed to verify and communicate with client
     private final Socket socket;
     private final Logger logger;
     // There data in serverData is used between Server.java and the threads in ConnectionThread
-    private final AtomicReference<ServerData> serverData;
+    private final ServerData serverData;
     private Integer clientId;
 
-    public ConnectionThread(Socket clientSocket, AtomicReference<ServerData> serverData) {
+    public ConnectionThread(Socket clientSocket, ServerData serverData) {
         this.socket = clientSocket;
         this.serverData = serverData;
         this.logger = new Logger();
@@ -41,10 +39,9 @@ public class ConnectionThread extends Thread {
     private void closeSocket() throws IOException {
         this.socket.close();
         this.serverData
-                .get()
                 .decrementCurrentConnections();
 
-        if(!this.serverData.get().removeSocketByClientId(this.clientId))
+        if(!this.serverData.removeSocketByClientId(this.clientId))
             logger.logErrorSocketNotInSocketList(this.clientId);
 
         this.logger.logSocketClosed(this.clientId);
@@ -92,34 +89,37 @@ public class ConnectionThread extends Thread {
         }
     }
 
-    private boolean validateSteps(Integer nextStep) {
-        return Objects.equals(nextStep, this.serverData.get().getCurrentStep());
+    private boolean validateSteps(Integer completedStep) {
+        return Objects.equals(
+                completedStep,
+                this.serverData.getCurrentStep().get()
+        );
     }
 
-    private boolean checkForSteps(String word) {
+    private boolean checkForSteps(String word)  {
         if (word.contains(Constants.PREFIX_CURRENT_STEP)) {
-            var nextStep = Integer.valueOf(word.split(Constants.COLON)[1]);
+            var completedStep = Integer.valueOf(word.split(Constants.COLON)[1]);
 
-            if (validateSteps(nextStep)) {
+            if (validateSteps(completedStep)) {
                 incrementClientStep();
                 return true;
             }
             else {
                 var clientSteps = this.serverData
-                        .get()
                         .getConnectedSockedStepByClientId(this.clientId);
                 var serverSteps = this.serverData
-                        .get()
-                        .getCurrentStep();
-                logger.logStepMismatchError(clientSteps, serverSteps, this.clientId);
-                throw new InvalidParameterException();
+                        .getCurrentStep()
+                        .get();
+                System.out.printf("ERROR: Client: %s, Server: %s, NextStep: %s %n",
+                        clientSteps, serverSteps, completedStep);
+                logger.logStepMismatchError(completedStep, serverSteps, this.clientId);
             }
         }
         return false;
     }
 
     private void incrementClientStep() {
-        this.serverData.get().incrementStepOfConnectedSocketByClientId(clientId);
+        this.serverData.incrementStepOfConnectedSocketByClientId(this.clientId);
     }
 
     private boolean checkForConnectionId(String word) {

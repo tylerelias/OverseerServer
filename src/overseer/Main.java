@@ -3,13 +3,12 @@ package overseer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Main {
 
 
     public static void main(String[] args) {
-        AtomicReference<ServerData> serverData = new AtomicReference<>();
+        ServerData serverData;
         String stepNumber = null;
         int connectionLimit = 0;
         var logger = new Logger();
@@ -35,10 +34,10 @@ public class Main {
 
         Integer finalStepNumber = Integer.parseInt(stepNumber);
         Integer finalConnectionLimit = connectionLimit;
+        serverData = new ServerData(finalStepNumber, finalConnectionLimit, 0);
 
         var serverThread = new Thread(() -> {
             var server = new Server();
-            serverData.set(new ServerData( finalStepNumber, finalConnectionLimit, 0));
             server.start(serverData);
         });
 

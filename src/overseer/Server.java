@@ -4,15 +4,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Objects;
 
 public class Server {
     private static final Integer PORT = 4242;
     private final Logger logger = new Logger();
-    private AtomicReference<ServerData> serverData;
+    private ServerData serverData;
     private ServerSocket serverSocket;
 
-    public void start(AtomicReference<ServerData> serverData) {
+    public void start(ServerData serverData) {
         this.serverData = serverData;
 
         try {
@@ -20,22 +20,21 @@ public class Server {
             var isAtConnectionLimit = false;
 
             while (!this.serverSocket.isClosed()) {
-                if (serverData.get().checkIfAllClientsConnected()) {
+                if (serverData.checkIfAllClientsConnected()) {
                     isAtConnectionLimit = false;
                     createConnectionThread();
                 } else if (!isAtConnectionLimit) {
                     isAtConnectionLimit = true;
-                    logger.logConnectionLimitReached(serverData.get().getCurrentConnections());
-                    System.out.println("SERVER: Step: " + this.serverData.get().getCurrentStep());
-
+                    logger.logConnectionLimitReached(serverData.getCurrentConnections());
                 }
                 if (isAtConnectionLimit && areAllConnectionThreadsAtSameStep()) {
+                    var nextStep = this.serverData.getCurrentStep().get() + 1;
                     sendAllClientsMessage(
                             Constants.PREFIX_CLIENTS +
                                     Constants.COMMAND_ALL_CLIENTS_CONNECTED +
                                     Constants.COMMAND_SPLITTER +
                                     Constants.PREFIX_NEXT_STEP
-                                    + (this.serverData.get().getCurrentStep() + 1)
+                                    + nextStep
                     );
                     //todo: only call once a simulationBegin = true has been made
                     waitForAllClientsToCompleteSteps();
@@ -48,9 +47,10 @@ public class Server {
     }
 
     private boolean areAllConnectionThreadsAtSameStep() {
-        var currentStep = this.serverData.get().getCurrentStep();
-        for (ConnectedSockets s : this.serverData.get().getConnectedSockets()) {
-            if (s.getCurrentStep() != currentStep)
+        var currentServerStep = this.serverData.getCurrentStep().get();
+        for (ConnectedSockets s : this.serverData.getConnectedSockets()) {
+            var socketStep = s.getCurrentStep().get();
+            if (socketStep != currentServerStep)
                 return false;
         }
         return true;
@@ -58,13 +58,13 @@ public class Server {
 
     private void createConnectionThread() throws IOException {
         Socket socket = this.serverSocket.accept();
-        this.serverData.get().addSocket(socket, socket.hashCode(), this.serverData.get().getCurrentStep());
+        this.serverData.addSocket(socket, socket.hashCode(), this.serverData.getCurrentStep().get());
         new ConnectionThread(socket, this.serverData).start();
-        this.serverData.get().incrementCurrentConnections();
+        this.serverData.incrementCurrentConnections();
     }
 
     private void sendAllClientsMessage(String message) {
-        var socketList = this.serverData.get().getConnectedSockets();
+        var socketList = this.serverData.getConnectedSockets();
         socketList.forEach(s -> {
             try {
                 var sSocket = s.getSocket();
@@ -90,29 +90,18 @@ public class Server {
 
     private void waitForAllClientsToCompleteSteps() {
         var haveAllCompletedSteps = false;
-        var serverStep = this.serverData.get().getCurrentStep();
         while (!haveAllCompletedSteps) {
             var completed = 0;
-            for (ConnectedSockets connectedSocket : this.serverData.get().getConnectedSockets()) {
-                if (connectedSocket.getCurrentStep() == serverStep) {
+            for (ConnectedSockets connectedSocket : this.serverData.getConnectedSockets()) {
+                if (Objects.equals(connectedSocket.getCurrentStep().get(), this.serverData.getCurrentStep().get()))
                     completed++;
-                }
-                if (completed == this.serverData.get().getCurrentConnections()) {
-                    System.out.println("SERVER: Steps done by all sockets.");
+                
+                if (completed == this.serverData.getCurrentConnections()) {
                     haveAllCompletedSteps = true;
-                    this.serverData.get().incrementCurrentStep();
+                    this.serverData.incrementCurrentStep();
                     break;
                 }
             }
-        }
-    }
-
-    private void simulateSteps() {
-        int stepNumber = Integer.parseInt(String.valueOf(this.serverData.get().getTotalSteps()));
-        var connectedSockets = this.serverData.get().getConnectedSockets();
-
-        for (var i = 0; i < stepNumber; i++) {
-            sendAllClientsMessage(Constants.PREFIX_NEXT_STEP + stepNumber + 1);
         }
     }
 }
