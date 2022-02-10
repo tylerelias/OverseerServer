@@ -36,8 +36,7 @@ public class Logger {
     }
 
     public void logStepMismatchError(Integer clientSteps, Integer serverSteps, Integer clientConnectionId) {
-        String errorMessage = String.format(
-                "Client: %s, Server: %s. Connection to client %s will be terminated.",
+        String errorMessage = String.format("Client: %s, Server: %s, ClientId: %s",
                 clientSteps, serverSteps, clientConnectionId);
         logError(errorMessage, Constants.ERROR_STEP_MISMATCH);
     }

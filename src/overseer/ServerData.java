@@ -10,16 +10,16 @@ import java.util.Objects;
  */
 public class ServerData {
     private Server server;                      // Overseer server data TODO: not needed? remove?
-    private String stepNumber;                  // total steps that the simulation will take
+    private Integer totalSteps;                  // total steps that the simulation will take
     private Integer currentStep;                // the current step in the simulation
     private Integer connectionLimit;            // connection limit set by the Overseer
     private Integer currentConnections;         // current amount of connected sockets
     private final Logger logger = new Logger(); // to log stuff that goes down
     private final ArrayList<ConnectedSockets> connectedSockets; // Puts all the sockets in a nice ArrayList
 
-    ServerData(Server server, String stepNumber, Integer connectionLimit, Integer currentConnections) {
+    ServerData(Server server, Integer totalSteps, Integer connectionLimit, Integer currentConnections) {
         this.server = server;
-        this.stepNumber = stepNumber;
+        this.totalSteps = totalSteps;
         this.connectionLimit = connectionLimit;
         this.currentConnections = currentConnections;
         this.connectedSockets = new ArrayList<>();
@@ -28,7 +28,7 @@ public class ServerData {
 
     ServerData() {
         this.server = new Server();
-        this.stepNumber = "";
+        this.totalSteps = 0;
         this.connectionLimit = 0;
         this.currentConnections = 0;
         this.connectedSockets = new ArrayList<>();
@@ -43,12 +43,12 @@ public class ServerData {
         this.server = server;
     }
 
-    public String getStepNumber() {
-        return stepNumber;
+    public Integer getTotalSteps() {
+        return totalSteps;
     }
 
-    public void setStepNumber(String stepNumber) {
-        this.stepNumber = stepNumber;
+    public void setTotalSteps(Integer totalSteps) {
+        this.totalSteps = totalSteps;
     }
 
     public Integer getConnectionLimit() {

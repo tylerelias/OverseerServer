@@ -13,14 +13,12 @@ public class ConnectionThread extends Thread {
     private final Socket socket;
     private final Logger logger;
     private final AtomicReference<ServerData> serverData;
-    Integer clientSteps;
     Integer clientId;
 
     public ConnectionThread(Socket clientSocket, AtomicReference<ServerData> serverData) {
         this.socket = clientSocket;
         this.serverData = serverData;
         this.logger = new Logger();
-        this.clientSteps = 1;
     }
 
     // Socket will keep reading/writing messages as long as the connection
@@ -95,26 +93,29 @@ public class ConnectionThread extends Thread {
     }
 
     private boolean validateSteps(Integer nextStep) {
-        return Objects.equals(nextStep, this.serverData.get().getCurrentStep() + 1);
+        return Objects.equals(nextStep, this.serverData.get().getCurrentStep());
     }
 
     private boolean checkForSteps(String word) {
         if (word.contains(Constants.PREFIX_CURRENT_STEP)) {
-            var nextStep = word.split(Constants.COLON)[1];
+            var nextStep = Integer.valueOf(word.split(Constants.COLON)[1]);
 
-            if (validateSteps(Integer.valueOf(nextStep))) {
-                this.clientSteps = this.serverData
-                        .get()
-                        .incrementStepOfConnectedSocketByClientId(this.clientId);
+            if (validateSteps(nextStep)) {
+                incrementClientStep();
                 return true;
             }
             else {
+                var clientSteps = this.serverData.get().getConnectedSockedStepByClientId(this.clientId);
                 var serverSteps = this.serverData.get().getCurrentStep();
                 logger.logStepMismatchError(clientSteps, serverSteps, this.clientId);
                 throw new InvalidParameterException();
             }
         }
         return false;
+    }
+
+    private void incrementClientStep() {
+        this.serverData.get().incrementStepOfConnectedSocketByClientId(clientId);
     }
 
     private boolean checkForConnectionId(String word) {

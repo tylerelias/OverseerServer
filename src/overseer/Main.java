@@ -33,8 +33,9 @@ public class Main {
 
         logger.logArguments(stepNumber, connectionLimit);
 
-        String finalStepNumber = stepNumber;
+        Integer finalStepNumber = Integer.parseInt(stepNumber);
         Integer finalConnectionLimit = connectionLimit;
+
         var serverThread = new Thread(() -> {
             var server = new Server();
             serverData.set(new ServerData(server, finalStepNumber, finalConnectionLimit, 0));
