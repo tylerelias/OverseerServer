@@ -38,7 +38,7 @@ public class Main {
 
         var serverThread = new Thread(() -> {
             var server = new Server();
-            serverData.set(new ServerData(server, finalStepNumber, finalConnectionLimit, 0));
+            serverData.set(new ServerData( finalStepNumber, finalConnectionLimit, 0));
             server.start(serverData);
         });
 
