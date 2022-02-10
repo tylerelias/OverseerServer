@@ -79,9 +79,9 @@ public class ServerData {
     }
 
     public void incrementStepOfConnectedSocketByClientId(Integer clientId) {
-        for (var val : this.connectedSockets) {
-            if(val.getClientId() == clientId) {
-                val.incrementCurrentStep();
+        for (var socket : this.connectedSockets) {
+            if(socket.getClientId() == clientId) {
+                socket.incrementCurrentStep();
                 return;
             }
         }
@@ -89,9 +89,9 @@ public class ServerData {
     }
 
     public int getConnectedSockedStepByClientId(Integer clientId) {
-        for (var val : this.connectedSockets) {
-            if(val.getClientId() == clientId)
-                return val.getCurrentStep();
+        for (var socket : this.connectedSockets) {
+            if(socket.getClientId() == clientId)
+                return socket.getCurrentStep();
         }
         throw new NoSuchElementException();
     }

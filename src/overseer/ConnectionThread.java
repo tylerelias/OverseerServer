@@ -12,8 +12,9 @@ public class ConnectionThread extends Thread {
     // Info needed to verify and communicate with client
     private final Socket socket;
     private final Logger logger;
+    // There data in serverData is used between Server.java and the threads in ConnectionThread
     private final AtomicReference<ServerData> serverData;
-    Integer clientId;
+    private Integer clientId;
 
     public ConnectionThread(Socket clientSocket, AtomicReference<ServerData> serverData) {
         this.socket = clientSocket;
@@ -88,7 +89,6 @@ public class ConnectionThread extends Thread {
             if (!isConnectionIdSet) isConnectionIdSet = checkForConnectionId(word);
             // same as above, but for steps
             if (!isStepsSet) isStepsSet = checkForSteps(word);
-            //TODO: Steps
         }
     }
 
@@ -105,8 +105,12 @@ public class ConnectionThread extends Thread {
                 return true;
             }
             else {
-                var clientSteps = this.serverData.get().getConnectedSockedStepByClientId(this.clientId);
-                var serverSteps = this.serverData.get().getCurrentStep();
+                var clientSteps = this.serverData
+                        .get()
+                        .getConnectedSockedStepByClientId(this.clientId);
+                var serverSteps = this.serverData
+                        .get()
+                        .getCurrentStep();
                 logger.logStepMismatchError(clientSteps, serverSteps, this.clientId);
                 throw new InvalidParameterException();
             }
