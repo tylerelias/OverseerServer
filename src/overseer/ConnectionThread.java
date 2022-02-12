@@ -13,12 +13,14 @@ public class ConnectionThread extends Thread {
     // There data in serverData is used between Server.java and the threads in ConnectionThread
     private final ServerData serverData;
     private Integer clientId;
+    private boolean isConnectionIdSet;
 
     public ConnectionThread(Socket clientSocket, ServerData serverData) {
         this.socket = clientSocket;
         this.serverData = serverData;
         this.logger = new Logger();
         this.clientId = 0;
+        this.isConnectionIdSet = false;
     }
 
     // Socket will keep reading/writing messages as long as the connection
@@ -58,7 +60,7 @@ public class ConnectionThread extends Thread {
         try {
             String message = getDataInputStream();
             // TODO: Remove print in future?
-            this.logger.logSocketMessage(message, String.valueOf(this.socket.hashCode()));
+//            this.logger.logSocketMessage(message, String.valueOf(this.socket.hashCode()));
             processMessage(message);
             return message;
         } catch (EOFException e) {
@@ -79,14 +81,15 @@ public class ConnectionThread extends Thread {
 
     private void processMessage(String message) {
         var splitMessage = message.split(Constants.COMMAND_SPLITTER);
-        var isConnectionIdSet = false;
         var isStepsSet = false;
 
         for (var word : splitMessage) {
             // prevent unnecessary lookups if we already got the id
-            if (!isConnectionIdSet || this.clientId == 0) isConnectionIdSet = checkForConnectionId(word);
+            if (!this.isConnectionIdSet || this.clientId == 0)
+                this.isConnectionIdSet = checkForConnectionId(word);
             // same as above, but for steps
-            if (!isStepsSet) isStepsSet = checkForSteps(word);
+            if (!isStepsSet)
+                isStepsSet = checkForSteps(word);
         }
     }
 

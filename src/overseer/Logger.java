@@ -74,4 +74,12 @@ public class Logger {
     public void logErrorSocketNotInSocketList(Integer clientId) {
         logError(String.format("Socket %s was not found in the connected socket list", clientId),"ConnectionThread");
     }
+
+    public void logTellAllClientsToStep(Integer stepNumber) {
+        log(String.format("Server is sending all clients to commence step number %s", stepNumber));
+    }
+
+    public void logSimulationCompleted(Integer steps) {
+        log(String.format("The simulation has completed with the total of %s steps", steps));
+    }
 }

@@ -16,12 +16,14 @@ public class ServerData {
     private final AtomicInteger currentConnections;         // current amount of connected sockets
     private final Logger logger = new Logger(); // to log stuff that goes down
     private final ArrayList<ConnectedSockets> connectedSockets; // Puts all the sockets in a nice ArrayList
+    private final Integer portNumber;
 
-    ServerData(Integer totalSteps, Integer connectionLimit, Integer currentConnections) {
+    ServerData(Integer totalSteps, Integer connectionLimit, Integer portNumber) {
         this.totalSteps = totalSteps;
         this.connectionLimit = connectionLimit;
-        this.currentConnections = new AtomicInteger(currentConnections);
+        this.currentConnections = new AtomicInteger(0);
         this.connectedSockets = new ArrayList<>();
+        this.portNumber = portNumber;
         this.currentStep = new AtomicInteger(1);
     }
 
@@ -95,5 +97,9 @@ public class ServerData {
 
     public void incrementCurrentStep() {
         this.currentStep.incrementAndGet();
+    }
+
+    public Integer getPortNumber() {
+        return portNumber;
     }
 }

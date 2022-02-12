@@ -7,7 +7,6 @@ import java.net.Socket;
 import java.util.Objects;
 
 public class Server {
-    private static final Integer PORT = 4242;
     private final Logger logger = new Logger();
     private ServerData serverData;
     private ServerSocket serverSocket;
@@ -16,7 +15,7 @@ public class Server {
         this.serverData = serverData;
 
         try {
-            this.serverSocket = new ServerSocket(PORT);
+            this.serverSocket = new ServerSocket(this.serverData.getPortNumber());
             var isAtConnectionLimit = false;
 
             while (!this.serverSocket.isClosed()) {
@@ -27,23 +26,45 @@ public class Server {
                     isAtConnectionLimit = true;
                     logger.logConnectionLimitReached(serverData.getCurrentConnections().get());
                 }
-                if (isAtConnectionLimit && areAllConnectionThreadsAtSameStep()) {
-                    this.serverData.incrementCurrentStep();
-                    sendAllClientsMessage(
-                            Constants.PREFIX_CLIENTS +
-                                    Constants.COMMAND_ALL_CLIENTS_CONNECTED +
-                                    Constants.COMMAND_SPLITTER +
-                                    Constants.PREFIX_NEXT_STEP
-                                    + (this.serverData.getCurrentStep().get())
-                    );
+                if (validateSteppingConditions(isAtConnectionLimit)) {
+                    // At the moment the only thing the Overseer will do is tell the clients
+                    // to start proceeding the step (n+1) and wait for all clients to reach said step
+                    incrementCurrentServerStep();
+                    tellAllClientsToStep();
                     //todo: only call once a simulationBegin = true has been made
                     waitForAllClientsToCompleteSteps();
+                }
+                if(isSimulationCompleted()) {
+                    //TODO: Send clients that simulation is completed
+                    logger.logSimulationCompleted(this.serverData.getCurrentStep().get());
+                    this.serverSocket.cl
                 }
             }
 
         } catch (Exception e) {
             logger.logServerError(e);
         }
+    }
+
+    private boolean validateSteppingConditions(boolean isAtConnectionLimit) {
+        return isAtConnectionLimit &&
+                areAllConnectionThreadsAtSameStep() &&
+                !isSimulationCompleted();
+    }
+
+    private boolean isSimulationCompleted() {
+        return this.serverData.getCurrentStep().get() == this.serverData.getTotalSteps();
+    }
+
+    private void tellAllClientsToStep() {
+        logger.logTellAllClientsToStep(this.serverData.getCurrentStep().get());
+        sendAllClientsMessage(
+                Constants.PREFIX_CLIENTS +
+                        Constants.COMMAND_ALL_CLIENTS_CONNECTED +
+                        Constants.COMMAND_SPLITTER +
+                        Constants.PREFIX_NEXT_STEP
+                        + (this.serverData.getCurrentStep().get())
+        );
     }
 
     private boolean areAllConnectionThreadsAtSameStep() {
@@ -68,10 +89,10 @@ public class Server {
                 var sSocket = s.getSocket();
                 if (!sSocket.isClosed()) {
                     writeMessageToSocket(sSocket,
-                            Constants.PREFIX_CLIENT_ID +
-                                    sSocket.hashCode() +
-                                    Constants.COMMAND_SPLITTER +
-                                    message);
+                    Constants.PREFIX_CLIENT_ID +
+                            sSocket.hashCode() +
+                            Constants.COMMAND_SPLITTER +
+                            message);
                 } else
                     logger.logSocketClosed(s.hashCode());
             } catch (Exception e) {
@@ -96,10 +117,13 @@ public class Server {
                 
                 if (completed == this.serverData.getCurrentConnections().get()) {
                     haveAllCompletedSteps = true;
-                    this.serverData.incrementCurrentStep();
                     break;
                 }
             }
         }
+    }
+
+    private void incrementCurrentServerStep() {
+        this.serverData.incrementCurrentStep();
     }
 }
