@@ -19,12 +19,12 @@ public class Server {
             var isAtConnectionLimit = false;
 
             while (!this.serverSocket.isClosed()) {
-                if (serverData.checkIfAllClientsConnected()) {
+                if (this.serverData.checkIfAllClientsConnected()) {
                     isAtConnectionLimit = false;
                     createConnectionThread();
                 } else if (!isAtConnectionLimit) {
                     isAtConnectionLimit = true;
-                    logger.logConnectionLimitReached(serverData.getCurrentConnections().get());
+                    logger.logConnectionLimitReached(this.serverData.getCurrentConnections().get());
                 }
                 if (validateSteppingConditions(isAtConnectionLimit)) {
                     // At the moment the only thing the Overseer will do is tell the clients
