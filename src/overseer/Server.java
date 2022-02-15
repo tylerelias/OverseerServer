@@ -37,7 +37,7 @@ public class Server {
                 if(isSimulationCompleted()) {
                     //TODO: Send clients that simulation is completed
                     logger.logSimulationCompleted(this.serverData.getCurrentStep().get());
-                    this.serverSocket.cl
+                    this.serverSocket.close();
                 }
             }
 
