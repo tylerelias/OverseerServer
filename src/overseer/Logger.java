@@ -82,4 +82,8 @@ public class Logger {
     public void logSimulationCompleted(Integer steps) {
         log(String.format("The simulation has completed with the total of %s steps", steps));
     }
+
+    public void logServerInformation(String ipAddress) {
+        log(String.format("Server IP Address - %s", ipAddress));
+    }
 }

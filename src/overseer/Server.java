@@ -4,6 +4,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.Objects;
 
 public class Server {
@@ -17,6 +18,7 @@ public class Server {
         try {
             this.serverSocket = new ServerSocket(this.serverData.getPortNumber());
             var isAtConnectionLimit = false;
+            logServerInfo();
 
             while (!this.serverSocket.isClosed()) {
                 if (this.serverData.checkIfAllClientsConnected()) {
@@ -42,6 +44,12 @@ public class Server {
         } catch (Exception e) {
             logger.logServerError(e);
         }
+    }
+
+    private void logServerInfo() {
+        SocketAddress socketAddress = serverSocket.getLocalSocketAddress();
+        var ipAddress = socketAddress.toString().split("/")[1];
+        logger.logServerInformation(ipAddress);
     }
 
     private boolean validateSteppingConditions(boolean isAtConnectionLimit) {
