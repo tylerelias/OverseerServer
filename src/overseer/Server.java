@@ -39,8 +39,6 @@ public class Server {
                     this.serverSocket.close();
                 }
             }
-            System.out.println("Got out, yay");
-
         } catch (Exception e) {
             logger.logServerError(e);
         }
@@ -78,7 +76,7 @@ public class Server {
     }
 
     private boolean areAllConnectionThreadsAtSameStep() {
-        for (ConnectedSockets s : this.serverData.getConnectedSockets()) {
+        for (ConnectedSockets s : this.serverData.getConnectedSockets().values()) {
             if (s.getCurrentStep().get() != this.serverData.getCurrentStep().get())
                 return false;
         }
@@ -100,7 +98,7 @@ public class Server {
     }
 
     private void sendAllClientsMessage(String message) {
-        var socketList = this.serverData.getConnectedSockets();
+        var socketList = this.serverData.getConnectedSockets().values();
         socketList.forEach(s -> {
             try {
                 var sSocket = s.getSocket();
@@ -128,7 +126,7 @@ public class Server {
         var haveAllCompletedSteps = false;
         while (!haveAllCompletedSteps) {
             var completed = 0;
-            for (ConnectedSockets connectedSocket : this.serverData.getConnectedSockets()) {
+            for (ConnectedSockets connectedSocket : this.serverData.getConnectedSockets().values()) {
                 if (Objects.equals(connectedSocket.getCurrentStep().get(), this.serverData.getCurrentStep().get()))
                     completed++;
                 

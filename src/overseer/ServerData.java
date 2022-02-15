@@ -1,9 +1,9 @@
 package overseer;
 
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*  This class stores all the vital information that the server holds
@@ -15,14 +15,14 @@ public class ServerData {
     private final Integer connectionLimit;            // connection limit set by the Overseer
     private final AtomicInteger currentConnections;         // current amount of connected sockets
     private final Logger logger = new Logger(); // to log stuff that goes down
-    private final ArrayList<ConnectedSockets> connectedSockets; // Puts all the sockets in a nice ArrayList
+    private final ConcurrentHashMap<Integer, ConnectedSockets> connectedSockets; // Puts all the sockets in a nice ArrayList
     private final Integer portNumber;
 
     ServerData(Integer totalSteps, Integer connectionLimit, Integer portNumber) {
         this.totalSteps = totalSteps;
         this.connectionLimit = connectionLimit;
         this.currentConnections = new AtomicInteger(0);
-        this.connectedSockets = new ArrayList<>();
+        this.connectedSockets = new ConcurrentHashMap<>();
         this.portNumber = portNumber;
         this.currentStep = new AtomicInteger(1);
     }
@@ -54,27 +54,27 @@ public class ServerData {
     }
 
     public void addSocket(Socket socket, int clientId, int currentStep) {
-        this.connectedSockets.add(new ConnectedSockets(socket, clientId, currentStep));
+        this.connectedSockets.putIfAbsent(clientId, new ConnectedSockets(socket, clientId, currentStep));
     }
 
-    public ArrayList<ConnectedSockets> getConnectedSockets() {
+    public ConcurrentHashMap<Integer, ConnectedSockets> getConnectedSockets() {
         return this.connectedSockets;
     }
 
     public ConnectedSockets getConnectedSocketByClientId(Integer clientId) {
-        for (var socket : this.connectedSockets) {
+        for (var socket : this.connectedSockets.values()) {
             if(socket.getClientId() == clientId)
                 return socket;
         }
         throw new NoSuchElementException();
     }
 
-    public boolean removeSocketByClientId(Integer clientId) {
-        return this.connectedSockets.removeIf(val -> val.getClientId() == clientId);
+    public ConnectedSockets removeSocketByClientId(Integer clientId) {
+        return this.connectedSockets.remove(clientId);
     }
 
     public void incrementStepOfConnectedSocketByClientId(Integer clientId) {
-        for (var socket : this.connectedSockets) {
+        for (var socket : this.connectedSockets.values()) {
             if(socket.getClientId() == clientId) {
                 socket.incrementCurrentStep();
                 return;
@@ -84,7 +84,7 @@ public class ServerData {
     }
 
     public int getConnectedSockedStepByClientId(Integer clientId) {
-        for (var socket : this.connectedSockets) {
+        for (var socket : this.connectedSockets.values()) {
             if(socket.getClientId() == clientId)
                 return socket.getCurrentStep().get();
         }

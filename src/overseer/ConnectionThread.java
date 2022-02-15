@@ -47,7 +47,7 @@ public class ConnectionThread extends Thread {
         this.serverData
                 .decrementCurrentConnections();
 
-        if(!this.serverData.removeSocketByClientId(this.clientId))
+        if(this.serverData.removeSocketByClientId(this.clientId) != null)
             logger.logErrorSocketNotInSocketList(this.clientId);
 
         this.logger.logSocketClosed(this.clientId);
@@ -63,7 +63,7 @@ public class ConnectionThread extends Thread {
         try {
             String message = getDataInputStream();
             // TODO: Remove print in future?
-            this.logger.logSocketMessage(message, String.valueOf(this.socket.hashCode()));
+//            this.logger.logSocketMessage(message, String.valueOf(this.socket.hashCode()));
             processMessage(message);
             return message;
         } catch (EOFException e) {
