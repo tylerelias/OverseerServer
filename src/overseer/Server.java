@@ -31,15 +31,15 @@ public class Server {
                     // to start proceeding the step (n+1) and wait for all clients to reach said step
                     incrementCurrentServerStep();
                     tellAllClientsToStep();
-                    //todo: only call once a simulationBegin = true has been made
                     waitForAllClientsToCompleteSteps();
                 }
                 if(isSimulationCompleted()) {
-                    //TODO: Send clients that simulation is completed
+                    tellAllClientsSimulationIsCompleted();
                     logger.logSimulationCompleted(this.serverData.getCurrentStep().get());
                     this.serverSocket.close();
                 }
             }
+            System.out.println("Got out, yay");
 
         } catch (Exception e) {
             logger.logServerError(e);
@@ -59,11 +59,21 @@ public class Server {
     private void tellAllClientsToStep() {
         logger.logTellAllClientsToStep(this.serverData.getCurrentStep().get());
         sendAllClientsMessage(
-                Constants.PREFIX_CLIENTS +
-                        Constants.COMMAND_ALL_CLIENTS_CONNECTED +
-                        Constants.COMMAND_SPLITTER +
-                        Constants.PREFIX_NEXT_STEP
-                        + (this.serverData.getCurrentStep().get())
+            Constants.PREFIX_SIMULATION +
+            Constants.COMMAND_ALL_CLIENTS_CONNECTED +
+            Constants.COMMAND_SPLITTER +
+            Constants.PREFIX_NEXT_STEP
+            + (this.serverData.getCurrentStep().get())
+        );
+    }
+
+    private void tellAllClientsSimulationIsCompleted() {
+        sendAllClientsMessage(
+            Constants.PREFIX_SIMULATION +
+            Constants.COMMAND_SIMULATION_COMPLETED +
+            Constants.COMMAND_SPLITTER +
+            Constants.PREFIX_CONNECTION +
+            Constants.TERMINATE_CONNECTION
         );
     }
 
@@ -75,10 +85,17 @@ public class Server {
         return true;
     }
 
+
     private void createConnectionThread() throws IOException {
-        Socket socket = this.serverSocket.accept();
-        this.serverData.addSocket(socket, socket.hashCode(), this.serverData.getCurrentStep().get());
-        new ConnectionThread(socket, this.serverData).start();
+        Socket clientSocket = this.serverSocket.accept();
+        int clientId = clientSocket.hashCode();
+
+        this.serverData.addSocket(clientSocket, clientId, this.serverData.getCurrentStep().get());
+        new ConnectionThread(clientSocket, this.serverData).start();
+        writeMessageToSocket(clientSocket,
+                Constants.PREFIX_CLIENT_ID +
+                        clientId
+                );
         this.serverData.incrementCurrentConnections();
     }
 

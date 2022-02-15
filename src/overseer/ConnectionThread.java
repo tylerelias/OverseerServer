@@ -13,7 +13,9 @@ public class ConnectionThread extends Thread {
     // There data in serverData is used between Server.java and the threads in ConnectionThread
     private final ServerData serverData;
     private Integer clientId;
+    //
     private boolean isConnectionIdSet;
+    private boolean isTotalStepsCompared;
 
     public ConnectionThread(Socket clientSocket, ServerData serverData) {
         this.socket = clientSocket;
@@ -21,6 +23,7 @@ public class ConnectionThread extends Thread {
         this.logger = new Logger();
         this.clientId = 0;
         this.isConnectionIdSet = false;
+        this.isTotalStepsCompared = false;
     }
 
     // Socket will keep reading/writing messages as long as the connection
@@ -60,7 +63,7 @@ public class ConnectionThread extends Thread {
         try {
             String message = getDataInputStream();
             // TODO: Remove print in future?
-//            this.logger.logSocketMessage(message, String.valueOf(this.socket.hashCode()));
+            this.logger.logSocketMessage(message, String.valueOf(this.socket.hashCode()));
             processMessage(message);
             return message;
         } catch (EOFException e) {
@@ -83,14 +86,27 @@ public class ConnectionThread extends Thread {
         var splitMessage = message.split(Constants.COMMAND_SPLITTER);
         var isStepsSet = false;
 
+        // TODO: Make a switch() Statement?
         for (var word : splitMessage) {
-            // prevent unnecessary lookups if we already got the id
             if (!this.isConnectionIdSet || this.clientId == 0)
                 this.isConnectionIdSet = checkForConnectionId(word);
-            // same as above, but for steps
             if (!isStepsSet)
                 isStepsSet = checkForSteps(word);
+            if (!this.isTotalStepsCompared)
+                this.isTotalStepsCompared = confirmTotalSteps(word);
         }
+    }
+
+    private boolean confirmTotalSteps(String word) {
+        if(word.contains(Constants.PREFIX_TOTAL_STEPS)) {
+            var totalClientSteps = Integer.valueOf(word.split(Constants.COLON)[1]);
+            // If for some reason the client and server don't have matching steps
+            if(!totalClientSteps.equals(this.serverData.getTotalSteps()))
+                throw new IllegalStateException(String.format("The client's total steps %s do not equal server total steps %s",
+                        totalClientSteps, this.serverData.getTotalSteps()));
+            return true;
+        }
+        return false;
     }
 
     private boolean validateSteps(Integer completedStep) {

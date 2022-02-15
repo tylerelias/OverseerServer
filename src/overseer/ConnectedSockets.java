@@ -4,9 +4,9 @@ import java.net.Socket;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConnectedSockets {
-    private int clientId;
-    private Socket socket;
-    private AtomicInteger currentStep;
+    private final int clientId;
+    private final Socket socket;
+    private final AtomicInteger currentStep;
 
     ConnectedSockets(Socket socket, int clientId, Integer currentStep) {
         this.socket = socket;

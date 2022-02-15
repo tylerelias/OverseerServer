@@ -18,10 +18,12 @@ public class Constants {
     static final String PREFIX_NEXT_STEP = "NextStep:";
     static final String PREFIX_CURRENT_STEP = "CurrentStep:";
     static final String PREFIX_CLIENT_ID = "ClientID:";
-    static final String PREFIX_CLIENTS = "Clients:";
     static final String PREFIX_CONNECTION = "Connection:";
+    static final String PREFIX_SIMULATION = "Simulation:";
+    static final String PREFIX_TOTAL_STEPS = "TotalSteps:";
     // Command related
-    static final String COMMAND_ALL_CLIENTS_CONNECTED = "all_clients_connected:";
+    static final String COMMAND_ALL_CLIENTS_CONNECTED = "all_clients_connected";
+    static final String COMMAND_SIMULATION_COMPLETED = "simulation_completed";
     static final String COMMAND_SPLITTER = ";";
     static final String COLON = ":";
 
