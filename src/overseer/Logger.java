@@ -44,7 +44,7 @@ public class Logger {
     public void logConnectionThreadExceptionError(Exception e) {
         logError(String.format("In ConnectionThread: %s", e.getMessage()),
                 Constants.EXCEPTION_THROWN);
-        e.printStackTrace();
+//        e.printStackTrace();
     }
 
     public void logSocketClosed(Integer clientConnectionId) {
@@ -85,5 +85,10 @@ public class Logger {
 
     public void logServerInformation(String ipAddress) {
         log(String.format("Server IP Address - %s", ipAddress));
+    }
+
+    public void logStepMismatchError(Integer clientSteps, Integer serverSteps) {
+        logError(String.format("The client's total steps %s do not equal server total steps %s. Client connection closed.",
+                clientSteps, serverSteps),"Step mismatch");
     }
 }

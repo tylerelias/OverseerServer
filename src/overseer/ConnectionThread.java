@@ -83,7 +83,7 @@ public class ConnectionThread extends Thread {
         return dataInputStream.readUTF();
     }
 
-    private void processMessage(String message) {
+    private void processMessage(String message) throws IOException {
         var splitMessage = message.split(Constants.COMMAND_SPLITTER);
         var isStepsSet = false;
 
@@ -98,13 +98,14 @@ public class ConnectionThread extends Thread {
         }
     }
 
-    private boolean confirmTotalSteps(String word) {
+    private boolean confirmTotalSteps(String word) throws IOException {
         if(word.contains(Constants.PREFIX_TOTAL_STEPS)) {
             var totalClientSteps = Integer.valueOf(word.split(Constants.COLON)[1]);
             // If for some reason the client and server don't have matching steps
-            if(!totalClientSteps.equals(this.serverData.getTotalSteps()))
-                throw new IllegalStateException(String.format("The client's total steps %s do not equal server total steps %s",
-                        totalClientSteps, this.serverData.getTotalSteps()));
+            if(!totalClientSteps.equals(this.serverData.getTotalSteps())) {
+                logger.logStepMismatchError(totalClientSteps, this.serverData.getTotalSteps());
+                throw new IllegalArgumentException();
+            }
             return true;
         }
         return false;
