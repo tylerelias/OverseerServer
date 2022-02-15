@@ -57,9 +57,6 @@ public class Server {
     private void tellAllClientsToStep() {
         logger.logTellAllClientsToStep(this.serverData.getCurrentStep().get());
         sendAllClientsMessage(
-            Constants.PREFIX_SIMULATION +
-            Constants.COMMAND_ALL_CLIENTS_CONNECTED +
-            Constants.COMMAND_SPLITTER +
             Constants.PREFIX_NEXT_STEP
             + (this.serverData.getCurrentStep().get())
         );
