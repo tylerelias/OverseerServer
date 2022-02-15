@@ -1,5 +1,6 @@
 package overseer;
 
+import java.io.IOException;
 import java.net.Socket;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -89,6 +90,17 @@ public class ServerData {
                 return socket.getCurrentStep().get();
         }
         throw new NoSuchElementException();
+    }
+
+    public void closeAllSockets() {
+        this.getConnectedSockets().values().forEach(s -> {
+            try {
+                if(s.getSocket().isConnected())
+                    s.getSocket().close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public AtomicInteger getCurrentStep() {

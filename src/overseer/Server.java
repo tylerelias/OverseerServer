@@ -70,6 +70,7 @@ public class Server {
             Constants.PREFIX_CONNECTION +
             Constants.TERMINATE_CONNECTION
         );
+        this.serverData.closeAllSockets();
     }
 
     private boolean areAllConnectionThreadsAtSameStep() {

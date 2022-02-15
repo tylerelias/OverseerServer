@@ -35,7 +35,8 @@ public class ConnectionThread extends Thread {
                 String message = readMessageFromSocket();
                 isConnected = checkIfConnectionTerminated(message);
             }
-            closeSocket();
+            if(this.socket.isConnected())
+                closeSocket();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -47,7 +48,7 @@ public class ConnectionThread extends Thread {
         this.serverData
                 .decrementCurrentConnections();
 
-        if(this.serverData.removeSocketByClientId(this.clientId) != null)
+        if(this.serverData.removeSocketByClientId(this.clientId) == null)
             logger.logErrorSocketNotInSocketList(this.clientId);
 
         this.logger.logSocketClosed(this.clientId);
