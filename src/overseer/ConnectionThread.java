@@ -83,7 +83,7 @@ public class ConnectionThread extends Thread {
         return dataInputStream.readUTF();
     }
 
-    private void processMessage(String message) throws IOException {
+    private void processMessage(String message) {
         var splitMessage = message.split(Constants.COMMAND_SPLITTER);
         var isStepsSet = false;
 
@@ -98,7 +98,7 @@ public class ConnectionThread extends Thread {
         }
     }
 
-    private boolean confirmTotalSteps(String word) throws IOException {
+    private boolean confirmTotalSteps(String word) {
         if(word.contains(Constants.PREFIX_TOTAL_STEPS)) {
             var totalClientSteps = Integer.valueOf(word.split(Constants.COLON)[1]);
             // If for some reason the client and server don't have matching steps

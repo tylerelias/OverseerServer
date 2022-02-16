@@ -81,7 +81,7 @@ public class ServerData {
                 return;
             }
         }
-        throw new NoSuchElementException();
+        throw new NoSuchElementException(String.format("Socket with Client ID %s not found%n", clientId));
     }
 
     public int getConnectedSockedStepByClientId(Integer clientId) {
@@ -89,7 +89,7 @@ public class ServerData {
             if(socket.getClientId() == clientId)
                 return socket.getCurrentStep().get();
         }
-        throw new NoSuchElementException();
+        throw new NoSuchElementException(String.format("Socket with Client ID %s not found%n", clientId));
     }
 
     public void closeAllSockets() {
