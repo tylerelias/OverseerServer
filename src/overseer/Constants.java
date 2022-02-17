@@ -21,6 +21,8 @@ public class Constants {
     static final String PREFIX_CONNECTION = "Connection:";
     static final String PREFIX_SIMULATION = "Simulation:";
     static final String PREFIX_TOTAL_STEPS = "TotalSteps:";
+    static final String PREFIX_TRANSFER_TO = "TransferTo:";
+    static final String PREFIX_TRANSFER_FROM = "TransferFrom:";
     // Command related
     static final String COMMAND_ALL_CLIENTS_CONNECTED = "all_clients_connected";
     static final String COMMAND_SIMULATION_COMPLETED = "simulation_completed";
