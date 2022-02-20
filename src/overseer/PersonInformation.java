@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PersonInformation implements Serializable {
-    private String clientId;
-    private String name;
     private final ConcurrentHashMap<String, String> informationHashMap = new ConcurrentHashMap<>();
 
     public void addInformation(String name, String clientId) {

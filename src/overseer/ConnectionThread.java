@@ -101,7 +101,7 @@ public class ConnectionThread extends Thread {
         try {
             var objectInputStream = new ObjectInputStream(socket.getInputStream());
             var personInformation = (PersonInformation) objectInputStream.readObject();
-            this.serverData.addClientInformation(String.valueOf(this.clientId), (PersonInformation) personInformation);
+            this.serverData.addClientInformation(this.clientId.toString(), (PersonInformation) personInformation);
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
         }
