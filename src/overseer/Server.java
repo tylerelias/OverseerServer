@@ -21,13 +21,17 @@ public class Server {
             logServerInfo();
 
             while (!this.serverSocket.isClosed()) {
+                // While the connected clients < the connection limit
                 if (this.serverData.checkIfAllClientsConnected()) {
                     isAtConnectionLimit = false;
                     createConnectionThread();
-                } else if (!isAtConnectionLimit) {
+                }
+                // When the connection limit has been reached
+                else if (!isAtConnectionLimit) {
                     isAtConnectionLimit = true;
                     logger.logConnectionLimitReached(this.serverData.getCurrentConnections().get());
                 }
+                // Now simulation can begin
                 if (validateSteppingConditions(isAtConnectionLimit)) {
                     // At the moment the only thing the Overseer will do is tell the clients
                     // to start proceeding the step (n+1) and wait for all clients to reach said step
@@ -89,7 +93,6 @@ public class Server {
         return true;
     }
 
-
     private void createConnectionThread() throws IOException {
         Socket clientSocket = this.serverSocket.accept();
         int clientId = clientSocket.hashCode();
@@ -97,8 +100,8 @@ public class Server {
         this.serverData.addSocket(clientSocket, clientId, this.serverData.getCurrentStep().get());
         new ConnectionThread(clientSocket, this.serverData).start();
         writeMessageToSocket(clientSocket,
-                Constants.PREFIX_CLIENT_ID +
-                        clientId
+                Constants.PREFIX_CLIENT_ID + clientId + Constants.COMMAND_SPLITTER +
+                        Constants.PREFIX_TOTAL_STEPS + this.serverData.getTotalSteps()
                 );
         this.serverData.incrementCurrentConnections();
     }

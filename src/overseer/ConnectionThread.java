@@ -1,8 +1,6 @@
 package overseer;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.util.Objects;
 
@@ -87,15 +85,30 @@ public class ConnectionThread extends Thread {
         var splitMessage = message.split(Constants.COMMAND_SPLITTER);
         var isStepsSet = false;
 
-        // TODO: Make a switch() Statement?
         for (var word : splitMessage) {
-            if (!this.isConnectionIdSet || this.clientId == 0)
+            if (isValidClientId())
                 this.isConnectionIdSet = checkForConnectionId(word);
             if (!isStepsSet)
                 isStepsSet = checkForSteps(word);
             if (!this.isTotalStepsCompared)
                 this.isTotalStepsCompared = confirmTotalSteps(word);
+            if(word.contains(Constants.PREFIX_OBJECT))
+                readPersonObject(message);
         }
+    }
+
+    private void readPersonObject(String message) {
+        try {
+            var objectInputStream = new ObjectInputStream(socket.getInputStream());
+            var personInformation = (PersonInformation) objectInputStream.readObject();
+            this.serverData.addClientInformation(String.valueOf(this.clientId), (PersonInformation) personInformation);
+        } catch (ClassNotFoundException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean isValidClientId() {
+        return this.isConnectionIdSet && this.clientId != 0;
     }
 
     private boolean confirmTotalSteps(String word) {

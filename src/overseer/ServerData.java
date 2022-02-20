@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*  This class stores all the vital information that the server holds
@@ -15,29 +16,21 @@ public class ServerData {
     private final AtomicInteger currentStep;                // the current step in the simulation
     private final Integer connectionLimit;            // connection limit set by the Overseer
     private final AtomicInteger currentConnections;         // current amount of connected sockets
+    private final Integer portNumber;
     private final Logger logger = new Logger(); // to log stuff that goes down
     private final ConcurrentHashMap<Integer, ConnectedSockets> connectedSockets; // Puts all the sockets in a nice ArrayList
-    private final Integer portNumber;
+    private final ConcurrentLinkedDeque<PersonTransaction> personTransactions;
+    private final ConcurrentHashMap<String, PersonInformation> personInformationHashMap;
 
     ServerData(Integer totalSteps, Integer connectionLimit, Integer portNumber) {
         this.totalSteps = totalSteps;
         this.connectionLimit = connectionLimit;
-        this.currentConnections = new AtomicInteger(0);
-        this.connectedSockets = new ConcurrentHashMap<>();
         this.portNumber = portNumber;
         this.currentStep = new AtomicInteger(1);
-    }
-
-    public Integer getTotalSteps() {
-        return totalSteps;
-    }
-
-    public Integer getConnectionLimit() {
-        return connectionLimit;
-    }
-
-    public AtomicInteger getCurrentConnections() {
-        return currentConnections;
+        this.currentConnections = new AtomicInteger(0);
+        this.connectedSockets = new ConcurrentHashMap<>();
+        this.personTransactions = new ConcurrentLinkedDeque<>();
+        this.personInformationHashMap = new ConcurrentHashMap<>();
     }
 
     public void incrementCurrentConnections() {
@@ -111,7 +104,31 @@ public class ServerData {
         this.currentStep.incrementAndGet();
     }
 
+    public void addPersonTransaction(PersonTransaction personTransaction) {
+        this.personTransactions.add(personTransaction);
+    }
+
+    public ConcurrentLinkedDeque<PersonTransaction> getPersonTransactions() {
+        return personTransactions;
+    }
+
     public Integer getPortNumber() {
         return portNumber;
+    }
+
+    public Integer getTotalSteps() {
+        return totalSteps;
+    }
+
+    public Integer getConnectionLimit() {
+        return connectionLimit;
+    }
+
+    public AtomicInteger getCurrentConnections() {
+        return currentConnections;
+    }
+
+    public void addClientInformation(String clientId, PersonInformation personInformation) {
+        this.personInformationHashMap.putIfAbsent(clientId, personInformation);
     }
 }
