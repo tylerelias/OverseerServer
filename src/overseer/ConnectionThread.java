@@ -81,7 +81,7 @@ public class ConnectionThread extends Thread {
         return dataInputStream.readUTF();
     }
 
-    private void processMessage(String message) {
+    private void processMessage(String message) throws IOException {
         var splitMessage = message.split(Constants.COMMAND_SPLITTER);
         var isStepsSet = false;
 
@@ -152,16 +152,21 @@ public class ConnectionThread extends Thread {
         this.serverData.incrementStepOfConnectedSocketByClientId(this.clientId);
     }
 
-    private boolean checkForConnectionId(String word) {
+    private boolean checkForConnectionId(String word) throws IOException {
         if (word.contains(Constants.PREFIX_SET_CLIENT_ID)) {
             var clientId = word.split(Constants.COLON)[1];
-            System.out.println("ClientID: " + clientId);
             setClientId(Integer.parseInt(clientId));
-            processMessage(Constants.PREFIX_RECEIVED_CLIENT_ID + clientId);
+            sendDataOutputStream(Constants.PREFIX_RECEIVED_CLIENT_ID + this.clientId);
             this.serverData.addSocket(this.socket, this.clientId, this.serverData.getCurrentStep().get());
             return true;
         }
         return false;
+    }
+
+    private void sendDataOutputStream(String message) throws IOException {
+        DataOutputStream dataOutputStream = new DataOutputStream(this.socket.getOutputStream());
+        dataOutputStream.writeUTF(message);
+        dataOutputStream.flush();
     }
 
     private void setClientId(Integer clientId) {
