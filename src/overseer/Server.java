@@ -95,13 +95,10 @@ public class Server {
 
     private void createConnectionThread() throws IOException {
         Socket clientSocket = this.serverSocket.accept();
-        int clientId = clientSocket.hashCode();
 
-        this.serverData.addSocket(clientSocket, clientId, this.serverData.getCurrentStep().get());
         new ConnectionThread(clientSocket, this.serverData).start();
         writeMessageToSocket(clientSocket,
-                Constants.PREFIX_CLIENT_ID + clientId + Constants.COMMAND_SPLITTER +
-                        Constants.PREFIX_TOTAL_STEPS + this.serverData.getTotalSteps()
+                Constants.PREFIX_TOTAL_STEPS + this.serverData.getTotalSteps()
                 );
         this.serverData.incrementCurrentConnections();
     }

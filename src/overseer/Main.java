@@ -18,7 +18,6 @@ public class Main {
             var argumentsList = new ArrayList<>(Arrays.asList(args));
 
             //TODO: Make --help flag with info
-
             for (var i = 0; i < argumentsList.size(); i++) {
                 if (Objects.equals(argumentsList.get(i), Constants.FLAG_STEP_NUMBER))
                     stepNumber = argumentsList.get(i + 1);

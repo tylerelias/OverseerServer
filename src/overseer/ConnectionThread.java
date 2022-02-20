@@ -86,11 +86,11 @@ public class ConnectionThread extends Thread {
         var isStepsSet = false;
 
         for (var word : splitMessage) {
-            if (isValidClientId())
+            if (!isValidClientId())
                 this.isConnectionIdSet = checkForConnectionId(word);
             if (!isStepsSet)
                 isStepsSet = checkForSteps(word);
-            if (!this.isTotalStepsCompared)
+            if (isStepsSet && !this.isTotalStepsCompared)
                 this.isTotalStepsCompared = confirmTotalSteps(word);
             if(word.contains(Constants.PREFIX_OBJECT))
                 readPersonObject(message);
@@ -99,7 +99,7 @@ public class ConnectionThread extends Thread {
 
     private void readPersonObject(String message) {
         try {
-            var objectInputStream = new ObjectInputStream(socket.getInputStream());
+            var objectInputStream = new ObjectInputStream(this.socket.getInputStream());
             var personInformation = (PersonInformation) objectInputStream.readObject();
             this.serverData.addClientInformation(this.clientId.toString(), (PersonInformation) personInformation);
         } catch (ClassNotFoundException | IOException e) {
@@ -153,9 +153,12 @@ public class ConnectionThread extends Thread {
     }
 
     private boolean checkForConnectionId(String word) {
-        if (word.contains(Constants.PREFIX_CLIENT_ID)) {
-            var splitWord = word.split(Constants.COLON);
-            setClientId(Integer.valueOf(splitWord[1]));
+        if (word.contains(Constants.PREFIX_SET_CLIENT_ID)) {
+            var clientId = word.split(Constants.COLON)[1];
+            System.out.println("ClientID: " + clientId);
+            setClientId(Integer.parseInt(clientId));
+            processMessage(Constants.PREFIX_RECEIVED_CLIENT_ID + clientId);
+            this.serverData.addSocket(this.socket, this.clientId, this.serverData.getCurrentStep().get());
             return true;
         }
         return false;

@@ -18,6 +18,8 @@ public class Constants {
     static final String PREFIX_NEXT_STEP = "NextStep:";
     static final String PREFIX_CURRENT_STEP = "CurrentStep:";
     static final String PREFIX_CLIENT_ID = "ClientID:";
+    static final String PREFIX_SET_CLIENT_ID = "SetClientID:";
+    static final String PREFIX_RECEIVED_CLIENT_ID = "ReceivedClientID:";
     static final String PREFIX_CONNECTION = "Connection:";
     static final String PREFIX_SIMULATION = "Simulation:";
     static final String PREFIX_TOTAL_STEPS = "TotalSteps:";
