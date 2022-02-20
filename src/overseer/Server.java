@@ -95,7 +95,6 @@ public class Server {
 
     private void createConnectionThread() throws IOException {
         Socket clientSocket = this.serverSocket.accept();
-
         new ConnectionThread(clientSocket, this.serverData).start();
         writeMessageToSocket(clientSocket,
                 Constants.PREFIX_TOTAL_STEPS + this.serverData.getTotalSteps()
@@ -104,18 +103,18 @@ public class Server {
     }
 
     private void sendAllClientsMessage(String message) {
-        var socketList = this.serverData.getConnectedSockets().values();
-        socketList.forEach(s -> {
+        var connectedSockets = this.serverData.getConnectedSockets().values();
+        connectedSockets.forEach(socket -> {
             try {
-                var sSocket = s.getSocket();
+                var sSocket = socket.getSocket();
                 if (!sSocket.isClosed()) {
                     writeMessageToSocket(sSocket,
                     Constants.PREFIX_CLIENT_ID +
-                            sSocket.hashCode() +
+                            socket.getClientId() +
                             Constants.COMMAND_SPLITTER +
                             message);
                 } else
-                    logger.logSocketClosed(s.hashCode());
+                    logger.logSocketClosed(socket.getClientId());
             } catch (Exception e) {
                 e.printStackTrace();
             }
