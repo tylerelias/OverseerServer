@@ -24,7 +24,7 @@ public class Logger {
     private String getTimeStamp() {
         return ZonedDateTime
                 .now(ZoneId.systemDefault())
-                .format(DateTimeFormatter.ofPattern("uuuu/MM/dd HH:mm:ss"));
+                .format(DateTimeFormatter.ofPattern("dd/MM/uuuu HH:mm:ss"));
     }
 
     public void logCurrentConnections(Integer currentConnections) {
@@ -90,5 +90,9 @@ public class Logger {
     public void logStepMismatchError(Integer clientSteps, Integer serverSteps) {
         logError(String.format("The client's total steps %s do not equal server total steps %s. Client connection closed.",
                 clientSteps, serverSteps),"Step mismatch");
+    }
+
+    public void logClientIdSet(String clientId) {
+        log(String.format("Client ID has been set: %s", clientId));
     }
 }

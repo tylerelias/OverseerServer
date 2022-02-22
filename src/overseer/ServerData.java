@@ -1,5 +1,6 @@
 package overseer;
 
+import javax.management.openmbean.KeyAlreadyExistsException;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.NoSuchElementException;
@@ -47,8 +48,10 @@ public class ServerData {
         return !Objects.equals(getCurrentConnections().get(), getConnectionLimit());
     }
 
-    public void addSocket(Socket socket, int clientId, int currentStep) {
-        this.connectedSockets.putIfAbsent(clientId, new ConnectedSockets(socket, clientId, currentStep));
+    public void addSocket(Socket socket, int clientId) {
+        if(this.connectedSockets.containsKey(clientId))
+            throw new KeyAlreadyExistsException();
+        this.connectedSockets.putIfAbsent(clientId, new ConnectedSockets(socket, clientId, 1));
     }
 
     public ConcurrentHashMap<Integer, ConnectedSockets> getConnectedSockets() {

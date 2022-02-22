@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.Objects;
 
 public class Server {
     private final Logger logger = new Logger();
@@ -32,14 +31,14 @@ public class Server {
                     logger.logConnectionLimitReached(this.serverData.getCurrentConnections().get());
                 }
                 // Now simulation can begin
-                if (validateSteppingConditions(isAtConnectionLimit)) {
+                if (validateSteppingConditions() && isAtConnectionLimit) {
                     // At the moment the only thing the Overseer will do is tell the clients
                     // to start proceeding the step (n+1) and wait for all clients to reach said step
                     incrementCurrentServerStep();
                     tellAllClientsToStep();
                     waitForAllClientsToCompleteSteps();
                 }
-                if(isSimulationCompleted()) {
+                if (isSimulationCompleted()) {
                     tellAllClientsSimulationIsCompleted();
                     logger.logSimulationCompleted(this.serverData.getCurrentStep().get());
                     this.serverSocket.close();
@@ -56,38 +55,41 @@ public class Server {
         logger.logServerInformation(ipAddress);
     }
 
-    private boolean validateSteppingConditions(boolean isAtConnectionLimit) {
-        return isAtConnectionLimit &&
-                areAllConnectionThreadsAtSameStep() &&
-                !isSimulationCompleted();
+    private boolean validateSteppingConditions() {
+        return areAllConnectionThreadsAtSameStep() && !isSimulationCompleted();
     }
 
     private boolean isSimulationCompleted() {
-        return this.serverData.getCurrentStep().get() == this.serverData.getTotalSteps();
+        return this.serverData.getCurrentStep().get() == this.serverData.getTotalSteps() &&
+                areAllConnectionThreadsAtSameStep();
     }
 
     private void tellAllClientsToStep() {
         logger.logTellAllClientsToStep(this.serverData.getCurrentStep().get());
         sendAllClientsMessage(
-            Constants.PREFIX_NEXT_STEP
-            + (this.serverData.getCurrentStep().get())
+                Constants.PREFIX_NEXT_STEP
+                + (this.serverData.getCurrentStep().get())
         );
     }
 
     private void tellAllClientsSimulationIsCompleted() {
         sendAllClientsMessage(
-            Constants.PREFIX_SIMULATION +
-            Constants.COMMAND_SIMULATION_COMPLETED +
-            Constants.COMMAND_SPLITTER +
-            Constants.PREFIX_CONNECTION +
-            Constants.TERMINATE_CONNECTION
+                Constants.PREFIX_SIMULATION +
+                Constants.COMMAND_SIMULATION_COMPLETED +
+                Constants.COMMAND_SPLITTER +
+                Constants.PREFIX_CONNECTION +
+                Constants.TERMINATE_CONNECTION
         );
         this.serverData.closeAllSockets();
     }
 
     private boolean areAllConnectionThreadsAtSameStep() {
-        for (ConnectedSockets s : this.serverData.getConnectedSockets().values()) {
-            if (s.getCurrentStep().get() != this.serverData.getCurrentStep().get())
+
+        if (this.serverData.getCurrentConnections().get() != this.serverData.getConnectionLimit())
+            return false;
+
+        for (ConnectedSockets socket : this.serverData.getConnectedSockets().values()) {
+            if (socket.getCurrentStep().get() != this.serverData.getCurrentStep().get())
                 return false;
         }
         return true;
@@ -98,7 +100,7 @@ public class Server {
         new ConnectionThread(clientSocket, this.serverData).start();
         writeMessageToSocket(clientSocket,
                 Constants.PREFIX_TOTAL_STEPS + this.serverData.getTotalSteps()
-                );
+        );
         this.serverData.incrementCurrentConnections();
     }
 
@@ -109,10 +111,10 @@ public class Server {
                 var sSocket = socket.getSocket();
                 if (!sSocket.isClosed()) {
                     writeMessageToSocket(sSocket,
-                    Constants.PREFIX_CLIENT_ID +
-                            socket.getClientId() +
-                            Constants.COMMAND_SPLITTER +
-                            message);
+                Constants.PREFIX_CLIENT_ID +
+                        socket.getClientId() +
+                        Constants.COMMAND_SPLITTER +
+                        message);
                 } else
                     logger.logSocketClosed(socket.getClientId());
             } catch (Exception e) {
@@ -129,17 +131,10 @@ public class Server {
 
     private void waitForAllClientsToCompleteSteps() {
         var haveAllCompletedSteps = false;
+
         while (!haveAllCompletedSteps) {
-            var completed = 0;
-            for (ConnectedSockets connectedSocket : this.serverData.getConnectedSockets().values()) {
-                if (Objects.equals(connectedSocket.getCurrentStep().get(), this.serverData.getCurrentStep().get()))
-                    completed++;
-                
-                if (completed == this.serverData.getCurrentConnections().get()) {
-                    haveAllCompletedSteps = true;
-                    break;
-                }
-            }
+            if (areAllConnectionThreadsAtSameStep())
+                haveAllCompletedSteps = true;
         }
     }
 

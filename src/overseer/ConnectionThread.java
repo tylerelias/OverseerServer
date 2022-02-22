@@ -31,6 +31,7 @@ public class ConnectionThread extends Thread {
         try {
             while (isConnected && !this.socket.isClosed()) {
                 String message = readMessageFromSocket();
+//                logger.logSocketMessage(message, clientId.toString());
                 isConnected = checkIfConnectionTerminated(message);
             }
             if(this.socket.isConnected())
@@ -61,8 +62,6 @@ public class ConnectionThread extends Thread {
     private String readMessageFromSocket() throws IOException {
         try {
             String message = getDataInputStream();
-            // TODO: Remove print in future?
-//            this.logger.logSocketMessage(message, String.valueOf(this.socket.hashCode()));
             processMessage(message);
             return message;
         } catch (EOFException e) {
@@ -93,15 +92,15 @@ public class ConnectionThread extends Thread {
             if (isStepsSet && !this.isTotalStepsCompared)
                 this.isTotalStepsCompared = confirmTotalSteps(word);
             if(word.contains(Constants.PREFIX_OBJECT))
-                readPersonObject(message);
+                readPersonObject();
         }
     }
 
-    private void readPersonObject(String message) {
+    private void readPersonObject() {
         try {
             var objectInputStream = new ObjectInputStream(this.socket.getInputStream());
             var personInformation = (PersonInformation) objectInputStream.readObject();
-            this.serverData.addClientInformation(this.clientId.toString(), (PersonInformation) personInformation);
+            this.serverData.addClientInformation(this.clientId.toString(), personInformation);
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
         }
@@ -139,9 +138,7 @@ public class ConnectionThread extends Thread {
                 return true;
             }
             else {
-                var serverSteps = this.serverData
-                        .getCurrentStep()
-                        .get();
+                var serverSteps = this.serverData.getCurrentStep().get();
                 logger.logStepMismatchError(completedStep, serverSteps, this.clientId);
             }
         }
@@ -157,7 +154,7 @@ public class ConnectionThread extends Thread {
             var clientId = word.split(Constants.COLON)[1];
             setClientId(Integer.parseInt(clientId));
             sendDataOutputStream(Constants.PREFIX_RECEIVED_CLIENT_ID + this.clientId);
-            this.serverData.addSocket(this.socket, this.clientId, this.serverData.getCurrentStep().get());
+            this.serverData.addSocket(this.socket, this.clientId);
             return true;
         }
         return false;
@@ -171,5 +168,6 @@ public class ConnectionThread extends Thread {
 
     private void setClientId(Integer clientId) {
         this.clientId = clientId;
+        logger.logClientIdSet(this.clientId.toString());
     }
 }
