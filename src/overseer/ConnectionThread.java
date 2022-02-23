@@ -3,6 +3,7 @@ package overseer;
 import java.io.*;
 import java.net.Socket;
 import java.util.Objects;
+import java.util.UUID;
 
 public class ConnectionThread extends Thread {
     // Info needed to verify and communicate with client
@@ -10,7 +11,7 @@ public class ConnectionThread extends Thread {
     private final Logger logger;
     // There data in serverData is used between Server.java and the threads in ConnectionThread
     private final ServerData serverData;
-    private Integer clientId;
+    private UUID clientId = null;
     //
     private boolean isConnectionIdSet;
     private boolean isTotalStepsCompared;
@@ -19,7 +20,6 @@ public class ConnectionThread extends Thread {
         this.socket = clientSocket;
         this.serverData = serverData;
         this.logger = new Logger();
-        this.clientId = 0;
         this.isConnectionIdSet = false;
         this.isTotalStepsCompared = false;
     }
@@ -49,9 +49,9 @@ public class ConnectionThread extends Thread {
                 .decrementCurrentConnections();
 
         if(this.serverData.removeSocketByClientId(this.clientId) == null)
-            logger.logErrorSocketNotInSocketList(this.clientId);
+            logger.logErrorSocketNotInSocketList(this.clientId.toString());
 
-        this.logger.logSocketClosed(this.clientId);
+        this.logger.logSocketClosed(this.clientId.toString());
     }
 
     private boolean checkIfConnectionTerminated(String message) {
@@ -150,7 +150,7 @@ public class ConnectionThread extends Thread {
     }
 
     private boolean isValidClientId() {
-        return this.isConnectionIdSet && this.clientId != 0;
+        return this.isConnectionIdSet && this.clientId != null;
     }
 
     private boolean confirmTotalSteps(String word) {
@@ -182,7 +182,7 @@ public class ConnectionThread extends Thread {
             }
             else {
                 var serverSteps = this.serverData.getCurrentStep().get();
-                logger.logStepMismatchError(completedStep, serverSteps, this.clientId);
+                logger.logStepMismatchError(completedStep, serverSteps, this.clientId.toString());
             }
         }
         return false;
@@ -194,8 +194,8 @@ public class ConnectionThread extends Thread {
 
     private boolean checkForConnectionId(String word) throws IOException {
         if (word.contains(Constants.PREFIX_SET_CLIENT_ID)) {
-            var clientId = word.split(Constants.COLON)[1];
-            setClientId(Integer.parseInt(clientId));
+            UUID clientId = UUID.fromString(word.split(Constants.COLON)[1]);
+            setClientId(clientId);
             sendDataOutputStream(Constants.PREFIX_RECEIVED_CLIENT_ID + this.clientId);
             this.serverData.addSocket(this.socket, this.clientId);
             return true;
@@ -209,7 +209,7 @@ public class ConnectionThread extends Thread {
         dataOutputStream.flush();
     }
 
-    private void setClientId(Integer clientId) {
+    private void setClientId(UUID clientId) {
         this.clientId = clientId;
         logger.logClientIdSet(this.clientId.toString());
     }

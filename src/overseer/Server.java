@@ -131,7 +131,7 @@ public class Server {
                         Constants.COMMAND_SPLITTER +
                         message);
                 } else
-                    logger.logSocketClosed(socket.getClientId());
+                    logger.logSocketClosed(socket.getClientId().toString());
             } catch (Exception e) {
                 e.printStackTrace();
             }

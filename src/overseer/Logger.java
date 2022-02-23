@@ -35,7 +35,7 @@ public class Logger {
         logError(Arrays.toString(e.getStackTrace()), "Server");
     }
 
-    public void logStepMismatchError(Integer clientSteps, Integer serverSteps, Integer clientConnectionId) {
+    public void logStepMismatchError(Integer clientSteps, Integer serverSteps, String clientConnectionId) {
         String errorMessage = String.format("Client: %s, Server: %s, ClientId: %s",
                 clientSteps, serverSteps, clientConnectionId);
         logError(errorMessage, Constants.ERROR_STEP_MISMATCH);
@@ -47,7 +47,7 @@ public class Logger {
 //        e.printStackTrace();
     }
 
-    public void logSocketClosed(Integer clientConnectionId) {
+    public void logSocketClosed(String clientConnectionId) {
         log(String.format("%s: Socket gracefully closed", clientConnectionId));
     }
 
@@ -71,7 +71,7 @@ public class Logger {
         log(String.format("The connection limit of %s has been reached.", connectionLimit));
     }
 
-    public void logErrorSocketNotInSocketList(Integer clientId) {
+    public void logErrorSocketNotInSocketList(String clientId) {
         logError(String.format("Socket %s was not found in the connected socket list", clientId),"ConnectionThread");
     }
 

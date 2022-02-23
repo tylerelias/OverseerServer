@@ -1,12 +1,13 @@
 package overseer;
 
 import java.io.Serializable;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BankInformation implements Serializable {
-    private final ConcurrentHashMap<String, String> informationHashMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, UUID> informationHashMap = new ConcurrentHashMap<>();
 
-    public void addInformation(String name, String clientId) {
+    public void addInformation(String name, UUID clientId) {
         informationHashMap.put(name, clientId);
     }
 

@@ -3,10 +3,7 @@ package overseer;
 import javax.management.openmbean.KeyAlreadyExistsException;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,7 +18,7 @@ public class ServerData {
     private final AtomicInteger currentConnections;         // current amount of connected sockets
     private final Integer portNumber;
     private final Logger logger = new Logger(); // to log stuff that goes down
-    private final ConcurrentHashMap<Integer, ConnectedSockets> connectedSockets; // Puts all the sockets in a nice ArrayList
+    private final ConcurrentHashMap<UUID, ConnectedSockets> connectedSockets; // Puts all the sockets in a nice ArrayList
     private final ConcurrentLinkedDeque<PersonTransaction> personTransactions;
     private final ConcurrentHashMap<String, PersonInformation> personInformationHashMap;
     private final ConcurrentHashMap<String, BankInformation> bankInformationHashMap;
@@ -52,17 +49,17 @@ public class ServerData {
         return !Objects.equals(getCurrentConnections().get(), getConnectionLimit());
     }
 
-    public void addSocket(Socket socket, int clientId) {
+    public void addSocket(Socket socket, UUID clientId) {
         if(this.connectedSockets.containsKey(clientId))
             throw new KeyAlreadyExistsException();
         this.connectedSockets.putIfAbsent(clientId, new ConnectedSockets(socket, clientId, 1));
     }
 
-    public ConcurrentHashMap<Integer, ConnectedSockets> getConnectedSockets() {
+    public ConcurrentHashMap<UUID, ConnectedSockets> getConnectedSockets() {
         return this.connectedSockets;
     }
 
-    public ConnectedSockets getConnectedSocketByClientId(Integer clientId) {
+    public ConnectedSockets getConnectedSocketByClientId(UUID clientId) {
         for (var socket : this.connectedSockets.values()) {
             if(socket.getClientId() == clientId)
                 return socket;
@@ -70,11 +67,11 @@ public class ServerData {
         throw new NoSuchElementException();
     }
 
-    public ConnectedSockets removeSocketByClientId(Integer clientId) {
+    public ConnectedSockets removeSocketByClientId(UUID clientId) {
         return this.connectedSockets.remove(clientId);
     }
 
-    public void incrementStepOfConnectedSocketByClientId(Integer clientId) {
+    public void incrementStepOfConnectedSocketByClientId(UUID clientId) {
         for (var socket : this.connectedSockets.values()) {
             if(socket.getClientId() == clientId) {
                 socket.incrementCurrentStep();
@@ -84,7 +81,7 @@ public class ServerData {
         throw new NoSuchElementException(String.format("Socket with Client ID %s not found%n", clientId));
     }
 
-    public int getConnectedSockedStepByClientId(Integer clientId) {
+    public int getConnectedSockedStepByClientId(UUID clientId) {
         for (var socket : this.connectedSockets.values()) {
             if(socket.getClientId() == clientId)
                 return socket.getCurrentStep().get();
@@ -105,11 +102,9 @@ public class ServerData {
 
     public String convertConnectedClientIdToString() {
         StringBuilder convertedClientIds = new StringBuilder();
-        ArrayList<Integer> clientIds = new ArrayList<>(connectedSockets.keySet());
+        ArrayList<UUID> clientIds = new ArrayList<>(connectedSockets.keySet());
 
-        clientIds.forEach(key -> {
-            convertedClientIds.append(key).append(",");
-        });
+        clientIds.forEach(key -> convertedClientIds.append(key).append(","));
 
         return convertedClientIds.toString();
     }
