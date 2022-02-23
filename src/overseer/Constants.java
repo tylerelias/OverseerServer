@@ -23,16 +23,18 @@ public class Constants {
     static final String PREFIX_CONNECTION = "Connection:";
     static final String PREFIX_SIMULATION = "Simulation:";
     static final String PREFIX_TOTAL_STEPS = "TotalSteps:";
-    static final String PREFIX_TRANSFER_TO = "TransferTo:";
+    static final String PREFIX_DEPOSIT_TO = "DepositTo:";
+    static final String PREFIX_BANK_NAME = "BankName:";
+    static final String PREFIX_CLIENT_TO = "ClientTo:";
+    static final String PREFIX_PERSON_NAME = "PersonName:";
     static final String PREFIX_TRANSFER_FROM = "TransferFrom:";
     static final String PREFIX_COUNTRY = "Country:";
     static final String PREFIX_PERSON_ID = "PersonId:";
     static final String PREFIX_AMOUNT = "Amount:";
     static final String PREFIX_ADD_PERSON = "AddPerson:";
-    static final String PREFIX_OBJECT = "Object:";
+    static final String PREFIX_PERSON_OBJECT = "PersonObject:";
+    static final String PREFIX_BANK_OBJECT = "BankObject:";
     // Command related
-    static final String COMMAND_PERSON = "Person";
-    static final String COMMAND_BANK = "Bank";
     static final String COMMAND_ALL_CLIENTS_CONNECTED = "all_clients_connected";
     static final String COMMAND_SIMULATION_COMPLETED = "simulation_completed";
     static final String COMMAND_SPLITTER = ";";

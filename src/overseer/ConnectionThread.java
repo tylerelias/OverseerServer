@@ -31,7 +31,8 @@ public class ConnectionThread extends Thread {
         try {
             while (isConnected && !this.socket.isClosed()) {
                 String message = readMessageFromSocket();
-                logger.logSocketMessage(message, clientId.toString());
+                //TODO: Temp
+//                logger.logSocketMessage(message, clientId.toString());
                 isConnected = checkIfConnectionTerminated(message);
             }
             if(this.socket.isConnected())
@@ -91,11 +92,41 @@ public class ConnectionThread extends Thread {
                 isStepsSet = checkForSteps(word);
             if (isStepsSet && !this.isTotalStepsCompared)
                 this.isTotalStepsCompared = confirmTotalSteps(word);
-            if(word.contains(Constants.COMMAND_PERSON))
+            if(word.contains(Constants.PREFIX_PERSON_OBJECT))
                 readPersonObject();
-            if(word.contains(Constants.COMMAND_BANK))
+            if(word.contains(Constants.PREFIX_BANK_OBJECT))
                 readBankObject();
+            if(word.contains(Constants.PREFIX_DEPOSIT_TO))
+                readDepositRequest(splitMessage);
         }
+    }
+
+    private void readDepositRequest(String[] splitMessage) {
+        String personName = null;
+        String bankName = null;
+        String clientTo = null;
+        long amount = -1;
+
+        for(var word : splitMessage) {
+            if(word.contains(Constants.PREFIX_PERSON_NAME))
+                personName = word.split(Constants.COLON)[1];
+            if(word.contains(Constants.PREFIX_BANK_NAME))
+                bankName = word.split(Constants.COLON)[1];
+            if(word.contains(Constants.PREFIX_CLIENT_TO))
+                clientTo = word.split(Constants.COLON)[1];
+            if(word.contains(Constants.PREFIX_AMOUNT))
+                amount = Long.parseLong(word.split(Constants.COLON)[1]);
+        }
+
+        if(isDepositDataValid(clientTo, personName, bankName, amount)) {
+            //todo: send out to clientTo about this deposit
+            logger.logDepositTo(clientTo, personName, bankName, amount);
+        }
+        //todo: logError if validation fails
+    }
+
+    private boolean isDepositDataValid(String clientTo, String personName, String bankName, long amount) {
+        return clientTo != null && personName != null && bankName != null && amount > 0;
     }
 
     private void readPersonObject() {

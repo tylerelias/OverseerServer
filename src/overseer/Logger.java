@@ -95,4 +95,9 @@ public class Logger {
     public void logClientIdSet(String clientId) {
         log(String.format("Client ID has been set: %s", clientId));
     }
+
+    public void logDepositTo(String clientId, String personName, String bankName, long amount) {
+        log(String.format("TransferTo: %s, Bank: %s, Amount: %s, ClientID: %s", personName, bankName, amount, clientId));
+    }
+
 }
