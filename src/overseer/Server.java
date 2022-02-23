@@ -17,6 +17,7 @@ public class Server {
         try {
             this.serverSocket = new ServerSocket(this.serverData.getPortNumber());
             var isAtConnectionLimit = false;
+            var hasSentClientIds = false;
             logServerInfo();
 
             while (!this.serverSocket.isClosed()) {
@@ -30,8 +31,14 @@ public class Server {
                     isAtConnectionLimit = true;
                     logger.logConnectionLimitReached(this.serverData.getCurrentConnections().get());
                 }
+                // Send all connected client ID's to clients
+                if(!hasSentClientIds && this.serverData.haveAllSocketsGottenAClientId())
+                {
+                    sendClientsSimulationInformation();
+                    hasSentClientIds = true;
+                }
                 // Now simulation can begin
-                if (validateSteppingConditions() && isAtConnectionLimit) {
+                else if (validateSteppingConditions() && isAtConnectionLimit && hasSentClientIds) {
                     // At the moment the only thing the Overseer will do is tell the clients
                     // to start proceeding the step (n+1) and wait for all clients to reach said step
                     incrementCurrentServerStep();
@@ -47,6 +54,14 @@ public class Server {
         } catch (Exception e) {
             logger.logServerError(e);
         }
+    }
+
+    private void sendClientsSimulationInformation() {
+        var clientIds = this.serverData.convertConnectedClientIdToString();
+        sendAllClientsMessage(
+            Constants.COMMAND_ALL_CLIENTS_CONNECTED + Constants.COMMAND_SPLITTER +
+            Constants.PREFIX_RECEIVED_CLIENT_ID + clientIds
+        );
     }
 
     private void logServerInfo() {

@@ -3,6 +3,8 @@ package overseer;
 import javax.management.openmbean.KeyAlreadyExistsException;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -101,6 +103,17 @@ public class ServerData {
         });
     }
 
+    public String convertConnectedClientIdToString() {
+        StringBuilder convertedClientIds = new StringBuilder();
+        ArrayList<Integer> clientIds = new ArrayList<>(connectedSockets.keySet());
+
+        clientIds.forEach(key -> {
+            convertedClientIds.append(key).append(",");
+        });
+
+        return convertedClientIds.toString();
+    }
+
     public AtomicInteger getCurrentStep() {
         return this.currentStep;
     }
@@ -139,5 +152,10 @@ public class ServerData {
 
     public void addBankInformation(String clientId, BankInformation bankInformation) {
         this.bankInformationHashMap.putIfAbsent(clientId, bankInformation);
+    }
+
+    public boolean haveAllSocketsGottenAClientId() {
+        return this.getConnectionLimit() == this.getCurrentConnections().get() &&
+                this.getConnectionLimit() == this.getConnectedSockets().size();
     }
 }
