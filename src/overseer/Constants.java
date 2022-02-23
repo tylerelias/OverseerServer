@@ -32,6 +32,7 @@ public class Constants {
     static final String PREFIX_OBJECT = "Object:";
     // Command related
     static final String COMMAND_PERSON = "Person";
+    static final String COMMAND_BANK = "Bank";
     static final String COMMAND_ALL_CLIENTS_CONNECTED = "all_clients_connected";
     static final String COMMAND_SIMULATION_COMPLETED = "simulation_completed";
     static final String COMMAND_SPLITTER = ";";

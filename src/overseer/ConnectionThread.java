@@ -31,7 +31,7 @@ public class ConnectionThread extends Thread {
         try {
             while (isConnected && !this.socket.isClosed()) {
                 String message = readMessageFromSocket();
-//                logger.logSocketMessage(message, clientId.toString());
+                logger.logSocketMessage(message, clientId.toString());
                 isConnected = checkIfConnectionTerminated(message);
             }
             if(this.socket.isConnected())
@@ -91,8 +91,10 @@ public class ConnectionThread extends Thread {
                 isStepsSet = checkForSteps(word);
             if (isStepsSet && !this.isTotalStepsCompared)
                 this.isTotalStepsCompared = confirmTotalSteps(word);
-            if(word.contains(Constants.PREFIX_OBJECT))
+            if(word.contains(Constants.COMMAND_PERSON))
                 readPersonObject();
+            if(word.contains(Constants.COMMAND_BANK))
+                readBankObject();
         }
     }
 
@@ -101,6 +103,16 @@ public class ConnectionThread extends Thread {
             var objectInputStream = new ObjectInputStream(this.socket.getInputStream());
             var personInformation = (PersonInformation) objectInputStream.readObject();
             this.serverData.addClientInformation(this.clientId.toString(), personInformation);
+        } catch (ClassNotFoundException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void readBankObject() {
+        try {
+            var objectInputStream = new ObjectInputStream(this.socket.getInputStream());
+            var bankInformation = (BankInformation) objectInputStream.readObject();
+            this.serverData.addBankInformation(this.clientId.toString(), bankInformation);
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
         }
