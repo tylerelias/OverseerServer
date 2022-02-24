@@ -100,7 +100,7 @@ public class ServerData {
         });
     }
 
-    public String convertConnectedClientIdToString() {
+    public String convertConnectedClientIdToUUID() {
         StringBuilder convertedClientIds = new StringBuilder();
         ArrayList<UUID> clientIds = new ArrayList<>(connectedSockets.keySet());
 
@@ -149,8 +149,13 @@ public class ServerData {
         this.bankInformationHashMap.putIfAbsent(clientId, bankInformation.getAccountInformation(clientId));
     }
 
-    public boolean haveAllSocketsGottenAClientId() {
+    public boolean haveAllClientsBeenInitialized() {
         return this.getConnectionLimit() == this.getCurrentConnections().get() &&
-                this.getConnectionLimit() == this.getConnectedSockets().size();
+                this.getConnectionLimit() == this.getConnectedSockets().size() &&
+                this.getConnectionLimit() == this.bankInformationHashMap.size();
+    }
+
+    public ConcurrentHashMap<UUID, ArrayList<AccountInformation>> getBankInformationHashMap() {
+        return bankInformationHashMap;
     }
 }

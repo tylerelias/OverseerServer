@@ -2,6 +2,8 @@ package overseer;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -17,7 +19,7 @@ public class Server {
         try {
             this.serverSocket = new ServerSocket(this.serverData.getPortNumber());
             var isAtConnectionLimit = false;
-            var hasSentClientIds = false;
+            var hasInitializedSimulation = false;
             logServerInfo();
 
             while (!this.serverSocket.isClosed()) {
@@ -31,14 +33,15 @@ public class Server {
                     isAtConnectionLimit = true;
                     logger.logConnectionLimitReached(this.serverData.getCurrentConnections().get());
                 }
-                // Send all connected client ID's to clients
-                if(!hasSentClientIds && this.serverData.haveAllSocketsGottenAClientId())
+                // Send all connected required data to clients
+                if(!hasInitializedSimulation && this.serverData.haveAllClientsBeenInitialized())
                 {
                     sendClientsSimulationInformation();
-                    hasSentClientIds = true;
+                    sendBankInformationToAllClients();
+                    hasInitializedSimulation = true;
                 }
                 // Now simulation can begin
-                else if (validateSteppingConditions() && isAtConnectionLimit && hasSentClientIds) {
+                else if (validateSteppingConditions() && isAtConnectionLimit && hasInitializedSimulation) {
                     // At the moment the only thing the Overseer will do is tell the clients
                     // to start proceeding the step (n+1) and wait for all clients to reach said step
                     incrementCurrentServerStep();
@@ -56,8 +59,32 @@ public class Server {
         }
     }
 
+    private void sendBankInformationToAllClients() {
+        //todo: refactor & move to functions
+        for(var client : this.serverData.getConnectedSockets().values()) {
+            try {
+                var clientSocket = client.getSocket().getOutputStream();
+                sendDataOutputStream(clientSocket);
+                sendObjectOutputStream(clientSocket);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void sendDataOutputStream(OutputStream outputStream) throws IOException {
+        var dataOutputStream = new DataOutputStream(outputStream);
+        dataOutputStream.writeUTF(Constants.PREFIX_BANK_INFORMATION);
+        dataOutputStream.flush();
+    }
+
+    private void sendObjectOutputStream(OutputStream outputStream) throws IOException {
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
+        objectOutputStream.writeObject(this.serverData.getBankInformationHashMap());
+    }
+
     private void sendClientsSimulationInformation() {
-        var clientIds = this.serverData.convertConnectedClientIdToString();
+        var clientIds = this.serverData.convertConnectedClientIdToUUID();
         sendAllClientsMessage(
             Constants.COMMAND_ALL_CLIENTS_CONNECTED + Constants.COMMAND_SPLITTER +
             Constants.PREFIX_RECEIVED_CLIENT_ID + clientIds
