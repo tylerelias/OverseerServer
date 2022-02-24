@@ -26,6 +26,7 @@ public class Constants {
     static final String PREFIX_DEPOSIT_TO = "DepositTo:";
     static final String PREFIX_BANK_NAME = "BankName:";
     static final String PREFIX_CLIENT_TO = "ClientTo:";
+    static final String PREFIX_CLIENT_FROM = "ClientFrom:";
     static final String PREFIX_PERSON_NAME = "PersonName:";
     static final String PREFIX_TRANSFER_FROM = "TransferFrom:";
     static final String PREFIX_COUNTRY = "Country:";

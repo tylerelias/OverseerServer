@@ -84,7 +84,6 @@ public class ConnectionThread extends Thread {
     private void processMessage(String message) throws IOException {
         var splitMessage = message.split(Constants.COMMAND_SPLITTER);
         var isStepsSet = false;
-
         for (var word : splitMessage) {
             if (!isValidClientId())
                 this.isConnectionIdSet = checkForConnectionId(word);
@@ -97,14 +96,16 @@ public class ConnectionThread extends Thread {
             if(word.contains(Constants.PREFIX_BANK_OBJECT))
                 readBankObject();
             if(word.contains(Constants.PREFIX_DEPOSIT_TO))
-                readDepositRequest(splitMessage);
+                readDepositRequest(message);
         }
     }
 
-    private void readDepositRequest(String[] splitMessage) {
+    private void readDepositRequest(String message) throws IOException {
+        String[] splitMessage = message.split(Constants.COMMAND_SPLITTER);
         String personName = null;
         String bankName = null;
-        String clientTo = null;
+        UUID clientTo = null;
+        UUID clientFrom = null;
         long amount = -1;
 
         for(var word : splitMessage) {
@@ -113,19 +114,34 @@ public class ConnectionThread extends Thread {
             if(word.contains(Constants.PREFIX_BANK_NAME))
                 bankName = word.split(Constants.COLON)[1];
             if(word.contains(Constants.PREFIX_CLIENT_TO))
-                clientTo = word.split(Constants.COLON)[1];
+                clientTo = UUID.fromString(word.split(Constants.COLON)[1]);
             if(word.contains(Constants.PREFIX_AMOUNT))
                 amount = Long.parseLong(word.split(Constants.COLON)[1]);
+            if(word.contains(Constants.PREFIX_CLIENT_FROM))
+                clientFrom = UUID.fromString(word.split(Constants.COLON)[1]);
         }
 
         if(isDepositDataValid(clientTo, personName, bankName, amount)) {
-            //todo: send out to clientTo about this deposit
-            logger.logDepositTo(clientTo, personName, bankName, amount);
+            if(clientFrom == this.clientId)
+                sendDataOutputStream(message, clientTo);
+            else
+                sendDataOutputStream(message);
+            logger.logDepositTo(clientTo.toString(), personName, bankName, amount);
         }
         //todo: logError if validation fails
     }
 
-    private boolean isDepositDataValid(String clientTo, String personName, String bankName, long amount) {
+
+
+    private void sendDataOutputStream(String message, UUID clientId) throws IOException {
+        var connectedSockets = this.serverData.getConnectedSockets().get(clientId);
+        var outputStream = connectedSockets.getSocket().getOutputStream();
+        var dataOutputStream = new DataOutputStream(outputStream);
+        dataOutputStream.writeUTF(message);
+        dataOutputStream.flush();
+    }
+
+    private boolean isDepositDataValid(UUID clientTo, String personName, String bankName, long amount) {
         return clientTo != null && personName != null && bankName != null && amount > 0;
     }
 
