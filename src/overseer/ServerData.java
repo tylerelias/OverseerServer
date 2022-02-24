@@ -21,7 +21,7 @@ public class ServerData {
     private final ConcurrentHashMap<UUID, ConnectedSockets> connectedSockets; // Puts all the sockets in a nice ArrayList
     private final ConcurrentLinkedDeque<PersonTransaction> personTransactions;
     private final ConcurrentHashMap<String, PersonInformation> personInformationHashMap;
-    private final ConcurrentHashMap<String, BankInformation> bankInformationHashMap;
+    private final ConcurrentHashMap<UUID, ArrayList<AccountInformation>> bankInformationHashMap;
 
     ServerData(Integer totalSteps, Integer connectionLimit, Integer portNumber) {
         this.totalSteps = totalSteps;
@@ -32,7 +32,7 @@ public class ServerData {
         this.connectedSockets = new ConcurrentHashMap<>();
         this.personTransactions = new ConcurrentLinkedDeque<>();
         this.personInformationHashMap = new ConcurrentHashMap<>();
-        this.bankInformationHashMap = new ConcurrentHashMap<>();
+        this.bankInformationHashMap = new ConcurrentHashMap<UUID, ArrayList<AccountInformation>>();
     }
 
     public void incrementCurrentConnections() {
@@ -145,8 +145,8 @@ public class ServerData {
         this.personInformationHashMap.putIfAbsent(clientId, personInformation);
     }
 
-    public void addBankInformation(String clientId, BankInformation bankInformation) {
-        this.bankInformationHashMap.putIfAbsent(clientId, bankInformation);
+    public void addBankInformation(UUID clientId, BankInformation bankInformation) {
+        this.bankInformationHashMap.putIfAbsent(clientId, bankInformation.getAccountInformation(clientId));
     }
 
     public boolean haveAllSocketsGottenAClientId() {

@@ -143,7 +143,7 @@ public class ConnectionThread extends Thread {
         try {
             var objectInputStream = new ObjectInputStream(this.socket.getInputStream());
             var bankInformation = (BankInformation) objectInputStream.readObject();
-            this.serverData.addBankInformation(this.clientId.toString(), bankInformation);
+            this.serverData.addBankInformation(this.clientId, bankInformation);
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
         }
