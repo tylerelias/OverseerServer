@@ -6,19 +6,19 @@ public class AccountInformation implements Serializable {
 
     private String ownerId;
     private Integer accountId;
-    private String bankId;
+    private Integer bankId;
 
-    public AccountInformation(String ownerId, Integer accountId, String bankId) {
+    public AccountInformation(String ownerId, Integer accountId, Integer bankId) {
         this.ownerId = ownerId;
         this.accountId = accountId;
         this.bankId = bankId;
     }
 
-    public String getBankId() {
+    public Integer getBankId() {
         return bankId;
     }
 
-    public void setBankId(String bankId) {
+    public void setBankId(Integer bankId) {
         this.bankId = bankId;
     }
 
