@@ -14,11 +14,11 @@ public class Logger {
     }
 
     private void logError(String message, String errorType) {
-        System.out.printf("[%s] : [ERROR - %s] %s%n", getTimeStamp(), errorType, message);
+        System.err.printf("[%s] : [ERROR - %s] %s%n", getTimeStamp(), errorType, message);
     }
 
     private void logWarning(String message, String warningType) {
-        System.out.printf("[%s] : [WARNING - %s] %s%n", getTimeStamp(), warningType, message);
+        System.err.printf("[%s] : [WARNING - %s] %s%n", getTimeStamp(), warningType, message);
     }
 
     private String getTimeStamp() {
@@ -55,12 +55,12 @@ public class Logger {
         log(String.format("Message: %s - %s", message, threadName));
     }
 
-    public void logArguments(String stepNumber, int connectionLimit) {
+    public void logArguments(int stepNumber, int connectionLimit) {
         log(String.format("Argument - Total Steps: %s", stepNumber));
         log(String.format("Argument - Connection limit: %s", connectionLimit));
     }
 
-    public void logIncorrectArgumentsError(String stepNumber, int connectionLimit) {
+    public void logIncorrectArgumentsError(int stepNumber, int connectionLimit) {
         logError(
                 String.format("Arguments are not in the correct format: Connection limit: %s, Step number: %s",
                         connectionLimit, stepNumber),
@@ -100,4 +100,7 @@ public class Logger {
         log(String.format("DepositTo: %s, Bank: %s, Amount: %s, ClientID: %s, Current Step: %s", personName, bankName, amount, clientId, currentStep));
     }
 
+    public void logInvalidArgumentError() {
+        logError("Incorrect input of arguments. Step, flag and port-number are only supposed to be positive integer values", "Invalid argument");
+    }
 }

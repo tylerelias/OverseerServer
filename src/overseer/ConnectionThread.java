@@ -96,6 +96,17 @@ public class ConnectionThread extends Thread {
                 readBankObject();
             if(word.contains(Constants.PREFIX_DEPOSIT_TO))
                 readDepositRequest(message);
+            if(word.contains(Constants.PREFIX_TRANSACTION_DONE))
+                removeCompletedTransaction(splitMessage);
+        }
+    }
+
+    private void removeCompletedTransaction(String[] splitMessage) {
+        for(var word : splitMessage) {
+            if(word.contains(Constants.PREFIX_TRANSACTION_ID)) {
+                UUID transactionId = UUID.fromString(word.split(Constants.COLON)[1]);
+                this.serverData.removePersonTransaction(transactionId);
+            }
         }
     }
 
@@ -117,23 +128,21 @@ public class ConnectionThread extends Thread {
                 clientTo = UUID.fromString(word.split(Constants.COLON)[1]);
             if(word.contains(Constants.PREFIX_AMOUNT))
                 amount = Long.parseLong(word.split(Constants.COLON)[1]);
-            if(word.contains(Constants.PREFIX_CLIENT_ID))
+            if(word.contains(Constants.PREFIX_CLIENT_FROM))
                 clientFrom = UUID.fromString(word.split(Constants.COLON)[1]);
             if(word.contains(Constants.PREFIX_TRANSFER_AT_STEP))
                 currentStep = Integer.parseInt(word.split(Constants.COLON)[1]);
         }
 
         if(isDepositDataValid(clientTo, personName, bankName, amount, currentStep, clientFrom)) {
-            sendDataOutputStream(message, clientTo);
+            var personTransaction = new PersonTransaction(clientTo, clientFrom, personName, amount, currentStep, bankName);
+            sendDepositRequestToClient(personTransaction.toString(), clientTo);
+            serverData.addPersonTransaction(personTransaction);
             logger.logDepositTo(clientTo.toString(), personName, bankName, amount, currentStep);
         }
-        System.out.println("Invalid deposit data");
-        //todo: logError if validation fails
     }
 
-
-
-    private void sendDataOutputStream(String message, UUID clientTo) throws IOException {
+    private void sendDepositRequestToClient(String message, UUID clientTo) throws IOException {
         var clientToSocket = this.serverData.getConnectedSockets().get(clientTo);
         var outputStream = clientToSocket.getSocket().getOutputStream();
         var dataOutputStream = new DataOutputStream(outputStream);

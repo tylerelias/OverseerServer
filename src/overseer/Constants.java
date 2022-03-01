@@ -37,6 +37,9 @@ public class Constants {
     static final String PREFIX_BANK_OBJECT = "BankObject:";
     static final String PREFIX_BANK_INFORMATION = "BankInformation:";
     static final String PREFIX_TRANSFER_AT_STEP = "TransferAtStep:";
+    static final String PREFIX_TRANSACTION_ID = "TransactionId:";
+    static final String PREFIX_PERSON_TRANSACTION = "PersonTransaction:";
+    static final String PREFIX_TRANSACTION_DONE = "TransactionDone:";
     // Command related
     static final String COMMAND_ALL_CLIENTS_CONNECTED = "all_clients_connected";
     static final String COMMAND_SIMULATION_COMPLETED = "simulation_completed";

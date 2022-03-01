@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*  This class stores all the vital information that the server holds
@@ -19,7 +18,7 @@ public class ServerData {
     private final Integer portNumber;
     private final Logger logger = new Logger(); // to log stuff that goes down
     private final ConcurrentHashMap<UUID, ConnectedSockets> connectedSockets;
-    private final ConcurrentLinkedDeque<PersonTransaction> personTransactions;
+    private final ConcurrentHashMap<UUID, PersonTransaction> personTransactions;
     private final ConcurrentHashMap<String, PersonInformation> personInformationHashMap;
     private final ConcurrentHashMap<UUID, ArrayList<AccountInformation>> bankInformationHashMap;
 
@@ -30,7 +29,7 @@ public class ServerData {
         this.currentStep = new AtomicInteger(1);
         this.currentConnections = new AtomicInteger(0);
         this.connectedSockets = new ConcurrentHashMap<>();
-        this.personTransactions = new ConcurrentLinkedDeque<>();
+        this.personTransactions = new ConcurrentHashMap<>();
         this.personInformationHashMap = new ConcurrentHashMap<>();
         this.bankInformationHashMap = new ConcurrentHashMap<>();
     }
@@ -118,10 +117,19 @@ public class ServerData {
     }
 
     public void addPersonTransaction(PersonTransaction personTransaction) {
-        this.personTransactions.add(personTransaction);
+        this.personTransactions.put(personTransaction.transactionId, personTransaction);
     }
 
-    public ConcurrentLinkedDeque<PersonTransaction> getPersonTransactions() {
+    public boolean removePersonTransaction(UUID transactionId) {
+        var res = this.personTransactions.remove(transactionId);
+        return res != null;
+    }
+
+    public boolean isPersonTransactionEmpty() {
+        return this.personTransactions.isEmpty();
+    }
+
+    public ConcurrentHashMap<UUID, PersonTransaction> getPersonTransactions() {
         return personTransactions;
     }
 

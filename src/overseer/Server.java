@@ -41,7 +41,7 @@ public class Server {
                     hasInitializedSimulation = true;
                 }
                 // Now simulation can begin
-                else if (validateSteppingConditions() && isAtConnectionLimit && hasInitializedSimulation) {
+                else if (isAtConnectionLimit && hasInitializedSimulation && validateSteppingConditions()) {
                     incrementCurrentServerStep();
                     tellAllClientsToStep();
                     waitForAllClientsToCompleteSteps();
@@ -124,8 +124,8 @@ public class Server {
     }
 
     private boolean areAllConnectionThreadsAtSameStep() {
-
-        if (this.serverData.getCurrentConnections().get() != this.serverData.getConnectionLimit())
+        if (this.serverData.getCurrentConnections().get() != this.serverData.getConnectionLimit() &&
+            !this.serverData.isPersonTransactionEmpty())
             return false;
 
         for (ConnectedSockets socket : this.serverData.getConnectedSockets().values()) {
