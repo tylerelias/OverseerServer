@@ -45,13 +45,12 @@ public class ConnectionThread extends Thread {
     // Close the socket and remove it from the serverData's currently connected sockets
     private void closeSocket() throws IOException {
         this.socket.close();
-        this.serverData
-                .decrementCurrentConnections();
+        this.serverData.decrementCurrentConnections();
 
         if(this.serverData.removeSocketByClientId(this.clientId) == null)
             logger.logErrorSocketNotInSocketList(this.clientId.toString());
-
-        this.logger.logSocketClosed(this.clientId.toString());
+        else
+            logger.logSocketClosed(this.clientId.toString());
     }
 
     private boolean checkIfConnectionTerminated(String message) {
@@ -107,6 +106,7 @@ public class ConnectionThread extends Thread {
         UUID clientTo = null;
         UUID clientFrom = null;
         long amount = -1;
+        int currentStep = -1;
 
         for(var word : splitMessage) {
             if(word.contains(Constants.PREFIX_PERSON_NAME))
@@ -117,32 +117,37 @@ public class ConnectionThread extends Thread {
                 clientTo = UUID.fromString(word.split(Constants.COLON)[1]);
             if(word.contains(Constants.PREFIX_AMOUNT))
                 amount = Long.parseLong(word.split(Constants.COLON)[1]);
-            if(word.contains(Constants.PREFIX_CLIENT_FROM))
+            if(word.contains(Constants.PREFIX_CLIENT_ID))
                 clientFrom = UUID.fromString(word.split(Constants.COLON)[1]);
+            if(word.contains(Constants.PREFIX_TRANSFER_AT_STEP))
+                currentStep = Integer.parseInt(word.split(Constants.COLON)[1]);
         }
 
-        if(isDepositDataValid(clientTo, personName, bankName, amount)) {
-            if(clientFrom == this.clientId)
-                sendDataOutputStream(message, clientTo);
-            else
-                sendDataOutputStream(message);
-            logger.logDepositTo(clientTo.toString(), personName, bankName, amount);
+        if(isDepositDataValid(clientTo, personName, bankName, amount, currentStep, clientFrom)) {
+            sendDataOutputStream(message, clientTo);
+            logger.logDepositTo(clientTo.toString(), personName, bankName, amount, currentStep);
         }
+        System.out.println("Invalid deposit data");
         //todo: logError if validation fails
     }
 
 
 
-    private void sendDataOutputStream(String message, UUID clientId) throws IOException {
-        var connectedSockets = this.serverData.getConnectedSockets().get(clientId);
-        var outputStream = connectedSockets.getSocket().getOutputStream();
+    private void sendDataOutputStream(String message, UUID clientTo) throws IOException {
+        var clientToSocket = this.serverData.getConnectedSockets().get(clientTo);
+        var outputStream = clientToSocket.getSocket().getOutputStream();
         var dataOutputStream = new DataOutputStream(outputStream);
         dataOutputStream.writeUTF(message);
         dataOutputStream.flush();
     }
 
-    private boolean isDepositDataValid(UUID clientTo, String personName, String bankName, long amount) {
-        return clientTo != null && personName != null && bankName != null && amount > 0;
+    private boolean isDepositDataValid(UUID clientTo, String personName, String bankName, long amount, int currentStep, UUID clientFrom) {
+        return clientTo != null &&
+                personName != null &&
+                bankName != null &&
+                amount > 0 && currentStep > 0 &&
+                clientFrom != null &&
+                clientFrom.equals(this.clientId);
     }
 
     private void readPersonObject() {

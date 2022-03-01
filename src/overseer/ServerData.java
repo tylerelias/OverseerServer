@@ -18,7 +18,7 @@ public class ServerData {
     private final AtomicInteger currentConnections;         // current amount of connected sockets
     private final Integer portNumber;
     private final Logger logger = new Logger(); // to log stuff that goes down
-    private final ConcurrentHashMap<UUID, ConnectedSockets> connectedSockets; // Puts all the sockets in a nice ArrayList
+    private final ConcurrentHashMap<UUID, ConnectedSockets> connectedSockets;
     private final ConcurrentLinkedDeque<PersonTransaction> personTransactions;
     private final ConcurrentHashMap<String, PersonInformation> personInformationHashMap;
     private final ConcurrentHashMap<UUID, ArrayList<AccountInformation>> bankInformationHashMap;
@@ -32,7 +32,7 @@ public class ServerData {
         this.connectedSockets = new ConcurrentHashMap<>();
         this.personTransactions = new ConcurrentLinkedDeque<>();
         this.personInformationHashMap = new ConcurrentHashMap<>();
-        this.bankInformationHashMap = new ConcurrentHashMap<UUID, ArrayList<AccountInformation>>();
+        this.bankInformationHashMap = new ConcurrentHashMap<>();
     }
 
     public void incrementCurrentConnections() {

@@ -42,8 +42,6 @@ public class Server {
                 }
                 // Now simulation can begin
                 else if (validateSteppingConditions() && isAtConnectionLimit && hasInitializedSimulation) {
-                    // At the moment the only thing the Overseer will do is tell the clients
-                    // to start proceeding the step (n+1) and wait for all clients to reach said step
                     incrementCurrentServerStep();
                     tellAllClientsToStep();
                     waitForAllClientsToCompleteSteps();
