@@ -14,14 +14,12 @@ public class ConnectionThread extends Thread {
     private UUID clientId = null;
     //
     private boolean isConnectionIdSet;
-    private boolean isTotalStepsCompared;
 
     public ConnectionThread(Socket clientSocket, ServerData serverData) {
         this.socket = clientSocket;
         this.serverData = serverData;
         this.logger = new Logger();
         this.isConnectionIdSet = false;
-        this.isTotalStepsCompared = false;
     }
 
     // Socket will keep reading/writing messages as long as the connection
@@ -88,10 +86,6 @@ public class ConnectionThread extends Thread {
                 this.isConnectionIdSet = checkForConnectionId(word);
             if (!isStepsSet)
                 isStepsSet = checkForSteps(word);
-            if (isStepsSet && !this.isTotalStepsCompared)
-                this.isTotalStepsCompared = confirmTotalSteps(word);
-            if(word.contains(Constants.PREFIX_PERSON_OBJECT))
-                readPersonObject();
             if(word.contains(Constants.PREFIX_BANK_OBJECT))
                 readBankObject();
             if(word.contains(Constants.PREFIX_DEPOSIT_TO))
@@ -159,16 +153,6 @@ public class ConnectionThread extends Thread {
                 clientFrom.equals(this.clientId);
     }
 
-    private void readPersonObject() {
-        try {
-            var objectInputStream = new ObjectInputStream(this.socket.getInputStream());
-            var personInformation = (PersonInformation) objectInputStream.readObject();
-            this.serverData.addClientInformation(this.clientId.toString(), personInformation);
-        } catch (ClassNotFoundException | IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     private void readBankObject() {
         try {
             var objectInputStream = new ObjectInputStream(this.socket.getInputStream());
@@ -222,6 +206,7 @@ public class ConnectionThread extends Thread {
         this.serverData.incrementStepOfConnectedSocketByClientId(this.clientId);
     }
 
+    // This sets the ClientID of the socket that the Threadneedle program is connected to
     private boolean checkForConnectionId(String word) throws IOException {
         if (word.contains(Constants.PREFIX_SET_CLIENT_ID)) {
             UUID clientId = UUID.fromString(word.split(Constants.COLON)[1]);

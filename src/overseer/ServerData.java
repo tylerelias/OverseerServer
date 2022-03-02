@@ -19,7 +19,6 @@ public class ServerData {
     private final Logger logger = new Logger(); // to log stuff that goes down
     private final ConcurrentHashMap<UUID, ConnectedSockets> connectedSockets;
     private final ConcurrentHashMap<UUID, PersonTransaction> personTransactions;
-    private final ConcurrentHashMap<String, PersonInformation> personInformationHashMap;
     private final ConcurrentHashMap<UUID, ArrayList<AccountInformation>> bankInformationHashMap;
 
     ServerData(Integer totalSteps, Integer connectionLimit, Integer portNumber) {
@@ -30,7 +29,6 @@ public class ServerData {
         this.currentConnections = new AtomicInteger(0);
         this.connectedSockets = new ConcurrentHashMap<>();
         this.personTransactions = new ConcurrentHashMap<>();
-        this.personInformationHashMap = new ConcurrentHashMap<>();
         this.bankInformationHashMap = new ConcurrentHashMap<>();
     }
 
@@ -120,9 +118,8 @@ public class ServerData {
         this.personTransactions.put(personTransaction.transactionId, personTransaction);
     }
 
-    public boolean removePersonTransaction(UUID transactionId) {
-        var res = this.personTransactions.remove(transactionId);
-        return res != null;
+    public void removePersonTransaction(UUID transactionId) {
+        this.personTransactions.remove(transactionId);
     }
 
     public boolean isPersonTransactionEmpty() {
@@ -147,10 +144,6 @@ public class ServerData {
 
     public AtomicInteger getCurrentConnections() {
         return currentConnections;
-    }
-
-    public void addClientInformation(String clientId, PersonInformation personInformation) {
-        this.personInformationHashMap.putIfAbsent(clientId, personInformation);
     }
 
     public void addBankInformation(UUID clientId, BankInformation bankInformation) {
