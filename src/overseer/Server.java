@@ -1,11 +1,7 @@
 package overseer;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.SocketAddress;
 
 public class Server {
@@ -26,7 +22,7 @@ public class Server {
                 // While the connected clients < the connection limit
                 if (this.serverData.checkIfAllClientsConnected()) {
                     isAtConnectionLimit = false;
-                    createConnectionThread();
+                    acceptConnections();
                 }
                 // When the connection limit has been reached
                 else if (!isAtConnectionLimit) {
@@ -37,11 +33,11 @@ public class Server {
                 if(!hasInitializedSimulation && this.serverData.haveAllClientsBeenInitialized())
                 {
                     sendClientsSimulationInformation();
-                    sendBankInformationToAllClients();
                     hasInitializedSimulation = true;
+                    this.serverData.setHasSimulationStarted(true);
                 }
                 // Now simulation can begin
-                else if (isAtConnectionLimit && hasInitializedSimulation && validateSteppingConditions()) {
+                if (hasInitializedSimulation && isAtConnectionLimit && validateSteppingConditions()) {
                     incrementCurrentServerStep();
                     tellAllClientsToStep();
                     waitForAllClientsToCompleteSteps();
@@ -51,42 +47,22 @@ public class Server {
                     logger.logSimulationCompleted(this.serverData.getCurrentStep().get());
                     this.serverSocket.close();
                 }
+                Thread.sleep(1);
             }
         } catch (Exception e) {
             logger.logServerError(e);
         }
     }
 
-    private void sendBankInformationToAllClients() {
-        //todo: refactor & move to functions
-        for(var client : this.serverData.getConnectedSockets().values()) {
-            try {
-                var clientSocket = client.getSocket().getOutputStream();
-                sendDataOutputStream(clientSocket);
-                sendObjectOutputStream(clientSocket);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private void sendDataOutputStream(OutputStream outputStream) throws IOException {
-        var dataOutputStream = new DataOutputStream(outputStream);
-        dataOutputStream.writeUTF(Constants.PREFIX_BANK_INFORMATION);
-        dataOutputStream.flush();
-    }
-
-    private void sendObjectOutputStream(OutputStream outputStream) throws IOException {
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
-        objectOutputStream.writeObject(this.serverData.getBankInformationHashMap());
-    }
-
+    // Send all the required information needed for the Threadneedle client once
+    // all clients have connected and all the basic data has been gathered
     private void sendClientsSimulationInformation() {
         var clientIds = this.serverData.convertConnectedClientIdToUUID();
         sendAllClientsMessage(
             Constants.COMMAND_ALL_CLIENTS_CONNECTED + Constants.COMMAND_SPLITTER +
             Constants.PREFIX_RECEIVED_CLIENT_ID + clientIds
         );
+        sendAllClientsObject(this.serverData.getBankInformationHashMap());
     }
 
     private void logServerInfo() {
@@ -95,21 +71,26 @@ public class Server {
         logger.logServerInformation(ipAddress);
     }
 
-    private boolean validateSteppingConditions() {
-        return areAllConnectionThreadsAtSameStep() && !isSimulationCompleted();
+    private boolean validateSteppingConditions() throws InterruptedException {
+        return areAllConnectionThreadsAtSameStep() &&
+                !isSimulationCompleted() &&
+                this.serverData.isPersonTransactionEmpty();
     }
 
-    private boolean isSimulationCompleted() {
-        return this.serverData.getCurrentStep().get() == this.serverData.getTotalSteps() &&
-                areAllConnectionThreadsAtSameStep();
+    private boolean isSimulationCompleted() throws InterruptedException {
+        if(this.serverData.getCurrentStep().get() == this.serverData.getTotalSteps()) {
+            if(!this.serverData.isPersonTransactionEmpty())
+                while (!this.serverData.isPersonTransactionEmpty()) { Thread.sleep(1); }
+            return true;
+        }
+        return false;
     }
 
     private void tellAllClientsToStep() {
         logger.logTellAllClientsToStep(this.serverData.getCurrentStep().get());
         sendAllClientsMessage(
-                Constants.PREFIX_NEXT_STEP
-                + (this.serverData.getCurrentStep().get())
-        );
+            Constants.PREFIX_NEXT_STEP
+            + (this.serverData.getCurrentStep().get()));
     }
 
     private void tellAllClientsSimulationIsCompleted() {
@@ -124,37 +105,29 @@ public class Server {
     }
 
     private boolean areAllConnectionThreadsAtSameStep() {
-        if (this.serverData.getCurrentConnections().get() != this.serverData.getConnectionLimit() &&
-            !this.serverData.isPersonTransactionEmpty())
+        if (this.serverData.getCurrentConnections().get() != this.serverData.getConnectionLimit())
             return false;
 
         for (ConnectedSockets socket : this.serverData.getConnectedSockets().values()) {
-            if (socket.getCurrentStep().get() != this.serverData.getCurrentStep().get())
+            if (socket.getCurrentStep() != this.serverData.getCurrentStep().get())
                 return false;
         }
         return true;
     }
 
-    private void createConnectionThread() throws IOException {
-        Socket clientSocket = this.serverSocket.accept();
-        new ConnectionThread(clientSocket, this.serverData).start();
-        writeMessageToSocket(clientSocket,
-                Constants.PREFIX_TOTAL_STEPS + this.serverData.getTotalSteps()
-        );
+    private void acceptConnections() throws IOException {
+        var threadneedleSocket = this.serverSocket.accept();
+        new ConnectionThread(threadneedleSocket, this.serverData).start();
         this.serverData.incrementCurrentConnections();
     }
 
-    private void sendAllClientsMessage(String message) {
+    private void sendAllClientsObject(Object object) {
         var connectedSockets = this.serverData.getConnectedSockets().values();
         connectedSockets.forEach(socket -> {
             try {
-                var sSocket = socket.getSocket();
-                if (!sSocket.isClosed()) {
-                    writeMessageToSocket(sSocket,
-                Constants.PREFIX_CLIENT_ID +
-                        socket.getClientId() +
-                        Constants.COMMAND_SPLITTER +
-                        message);
+                var connectedSocket = socket.getThreadneedleSocket();
+                if (!connectedSocket.isClosed()) {
+                    socket.addToMessageQueue(object);
                 } else
                     logger.logSocketClosed(socket.getClientId().toString());
             } catch (Exception e) {
@@ -163,18 +136,32 @@ public class Server {
         });
     }
 
-    private void writeMessageToSocket(Socket s, String message) throws IOException {
-        var dataOutputStream = new DataOutputStream(s.getOutputStream());
-        dataOutputStream.writeUTF(message);
-        dataOutputStream.flush();
+    private void sendAllClientsMessage(String message) {
+        var connectedSockets = this.serverData.getConnectedSockets().values();
+        connectedSockets.forEach(socket -> {
+            try {
+                var connectedSocket = socket.getThreadneedleSocket();
+                if (!connectedSocket.isClosed()) {
+                    socket.addToMessageQueue(
+                        new Messages(Constants.PREFIX_CLIENT_ID +
+                        socket.getClientId() +
+                        Constants.COMMAND_SPLITTER +
+                        message));
+                } else
+                    logger.logSocketClosed(socket.getClientId().toString());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
-    private void waitForAllClientsToCompleteSteps() {
+    private void waitForAllClientsToCompleteSteps() throws InterruptedException {
         var haveAllCompletedSteps = false;
 
         while (!haveAllCompletedSteps) {
-            if (areAllConnectionThreadsAtSameStep())
+            if (areAllConnectionThreadsAtSameStep() && this.serverData.isPersonTransactionEmpty())
                 haveAllCompletedSteps = true;
+            Thread.sleep(1);
         }
     }
 

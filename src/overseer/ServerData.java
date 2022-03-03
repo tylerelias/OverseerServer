@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /*  This class stores all the vital information that the server holds
@@ -15,11 +16,19 @@ public class ServerData {
     private final AtomicInteger currentStep;                // the current step in the simulation
     private final Integer connectionLimit;            // connection limit set by the Overseer
     private final AtomicInteger currentConnections;         // current amount of connected sockets
-    private final Integer portNumber;
+    // when a client has loaded its configurations and env. it will send a "ClientReady:ClientID" to the server
+    private final AtomicInteger readyClients;
+    private final Integer portNumber;                   // the port number of the server itself
     private final Logger logger = new Logger(); // to log stuff that goes down
+    // the sockets (threadneedle programs) that are connected, along with important information about them
     private final ConcurrentHashMap<UUID, ConnectedSockets> connectedSockets;
-    private final ConcurrentHashMap<UUID, PersonTransaction> personTransactions;
-    private final ConcurrentHashMap<UUID, ArrayList<AccountInformation>> bankInformationHashMap;
+    // keeps track of the pending transactions that are taking place between clients
+    private final ConcurrentHashMap<UUID, PersonTransaction> pendingTransactions;
+    // the finished transactions of the simulation
+    private final ConcurrentHashMap<UUID, PersonTransaction> completedTransactions;
+    // Stores information about all banks that the clients have in their simulation
+    private final BankInformation bankInformationHashMap;
+    private final AtomicBoolean hasSimulationStarted = new AtomicBoolean(false);
 
     ServerData(Integer totalSteps, Integer connectionLimit, Integer portNumber) {
         this.totalSteps = totalSteps;
@@ -28,8 +37,18 @@ public class ServerData {
         this.currentStep = new AtomicInteger(1);
         this.currentConnections = new AtomicInteger(0);
         this.connectedSockets = new ConcurrentHashMap<>();
-        this.personTransactions = new ConcurrentHashMap<>();
-        this.bankInformationHashMap = new ConcurrentHashMap<>();
+        this.pendingTransactions = new ConcurrentHashMap<>();
+        this.bankInformationHashMap = new BankInformation();
+        completedTransactions = new ConcurrentHashMap<>();
+        readyClients = new AtomicInteger(0);
+    }
+
+    public void incrementReadyClients() {
+        this.readyClients.incrementAndGet();
+    }
+
+    public int getReadyClients() {
+        return this.readyClients.get();
     }
 
     public void incrementCurrentConnections() {
@@ -46,10 +65,10 @@ public class ServerData {
         return !Objects.equals(getCurrentConnections().get(), getConnectionLimit());
     }
 
-    public void addSocket(Socket socket, UUID clientId) {
+    public void addConnectedSocket(Socket threadneedleSocket, UUID clientId) {
         if(this.connectedSockets.containsKey(clientId))
             throw new KeyAlreadyExistsException();
-        this.connectedSockets.putIfAbsent(clientId, new ConnectedSockets(socket, clientId, 1));
+        this.connectedSockets.putIfAbsent(clientId, new ConnectedSockets(threadneedleSocket, clientId, 1));
     }
 
     public ConcurrentHashMap<UUID, ConnectedSockets> getConnectedSockets() {
@@ -58,7 +77,7 @@ public class ServerData {
 
     public ConnectedSockets getConnectedSocketByClientId(UUID clientId) {
         for (var socket : this.connectedSockets.values()) {
-            if(socket.getClientId() == clientId)
+            if(socket.getClientId().equals(clientId))
                 return socket;
         }
         throw new NoSuchElementException();
@@ -81,7 +100,7 @@ public class ServerData {
     public int getConnectedSockedStepByClientId(UUID clientId) {
         for (var socket : this.connectedSockets.values()) {
             if(socket.getClientId() == clientId)
-                return socket.getCurrentStep().get();
+                return socket.getCurrentStep();
         }
         throw new NoSuchElementException(String.format("Socket with Client ID %s not found%n", clientId));
     }
@@ -89,8 +108,8 @@ public class ServerData {
     public void closeAllSockets() {
         this.getConnectedSockets().values().forEach(s -> {
             try {
-                if(s.getSocket().isConnected())
-                    s.getSocket().close();
+                if(s.getThreadneedleSocket().isConnected())
+                    s.getThreadneedleSocket().close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -115,19 +134,23 @@ public class ServerData {
     }
 
     public void addPersonTransaction(PersonTransaction personTransaction) {
-        this.personTransactions.put(personTransaction.transactionId, personTransaction);
+        this.pendingTransactions.put(personTransaction.transactionId, personTransaction);
     }
 
     public void removePersonTransaction(UUID transactionId) {
-        this.personTransactions.remove(transactionId);
+        this.pendingTransactions.remove(transactionId);
     }
 
     public boolean isPersonTransactionEmpty() {
-        return this.personTransactions.isEmpty();
+        return this.pendingTransactions.isEmpty();
     }
 
-    public ConcurrentHashMap<UUID, PersonTransaction> getPersonTransactions() {
-        return personTransactions;
+    public ConcurrentHashMap<UUID, PersonTransaction> getPendingTransactions() {
+        return pendingTransactions;
+    }
+
+    public PersonTransaction getPersonTransactionById(UUID transactionId) {
+        return this.pendingTransactions.get(transactionId);
     }
 
     public Integer getPortNumber() {
@@ -146,17 +169,21 @@ public class ServerData {
         return currentConnections;
     }
 
-    public void addBankInformation(UUID clientId, BankInformation bankInformation) {
-        this.bankInformationHashMap.putIfAbsent(clientId, bankInformation.getAccountInformation(clientId));
-    }
-
     public boolean haveAllClientsBeenInitialized() {
         return this.getConnectionLimit() == this.getCurrentConnections().get() &&
                 this.getConnectionLimit() == this.getConnectedSockets().size() &&
-                this.getConnectionLimit() == this.bankInformationHashMap.size();
+                this.getConnectionLimit() == this.getReadyClients();
     }
 
-    public ConcurrentHashMap<UUID, ArrayList<AccountInformation>> getBankInformationHashMap() {
+    public BankInformation getBankInformationHashMap() {
         return bankInformationHashMap;
+    }
+
+    public void setHasSimulationStarted(boolean hasSimulationStarted) {
+        this.hasSimulationStarted.set(hasSimulationStarted);
+    }
+
+    public boolean getHasSimulationStarted() {
+        return this.hasSimulationStarted.get();
     }
 }

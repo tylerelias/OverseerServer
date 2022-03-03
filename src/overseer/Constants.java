@@ -28,15 +28,17 @@ public class Constants {
     static final String PREFIX_CLIENT_TO = "ClientTo:";
     static final String PREFIX_CLIENT_FROM = "ClientFrom:";
     static final String PREFIX_PERSON_NAME = "PersonName:";
-    static final String PREFIX_TRANSFER_FROM = "TransferFrom:";
-    static final String PREFIX_COUNTRY = "Country:";
-    static final String PREFIX_PERSON_ID = "PersonId:";
     static final String PREFIX_AMOUNT = "Amount:";
     static final String PREFIX_BANK_OBJECT = "BankObject:";
+    static final String PREFIX_PERSON_TRANSACTION_OBJECT = "PersonTransactionObject:";
     static final String PREFIX_BANK_INFORMATION = "BankInformation:";
     static final String PREFIX_TRANSFER_AT_STEP = "TransferAtStep:";
     static final String PREFIX_TRANSACTION_ID = "TransactionId:";
     static final String PREFIX_TRANSACTION_DONE = "TransactionDone:";
+    static final String PREFIX_TRANSACTION_FAILED = "TransactionFailed:";
+    static final String PREFIX_REVERT_TRANSACTION = "RevertTransaction:";
+    // Send this msg + Client ID to Overseer when the client is ready
+    public static final String PREFIX_CLIENT_READY = "ClientReady:";
     // Command related
     static final String COMMAND_ALL_CLIENTS_CONNECTED = "all_clients_connected";
     static final String COMMAND_SIMULATION_COMPLETED = "simulation_completed";

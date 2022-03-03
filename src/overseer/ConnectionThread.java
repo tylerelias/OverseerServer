@@ -2,21 +2,24 @@ package overseer;
 
 import java.io.*;
 import java.net.Socket;
+import java.security.InvalidKeyException;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ConnectionThread extends Thread {
     // Info needed to verify and communicate with client
-    private final Socket socket;
+    private final Socket threadneedleSocket;
     private final Logger logger;
     // There data in serverData is used between Server.java and the threads in ConnectionThread
     private final ServerData serverData;
     private UUID clientId = null;
-    //
+    private boolean isConnected = true;
+    private final AtomicBoolean hasSpawnedThreadneedleThread = new AtomicBoolean(false);
     private boolean isConnectionIdSet;
 
-    public ConnectionThread(Socket clientSocket, ServerData serverData) {
-        this.socket = clientSocket;
+    public ConnectionThread(Socket threadneedleSocket, ServerData serverData) throws IOException {
+        this.threadneedleSocket = threadneedleSocket;
         this.serverData = serverData;
         this.logger = new Logger();
         this.isConnectionIdSet = false;
@@ -25,24 +28,112 @@ public class ConnectionThread extends Thread {
     // Socket will keep reading/writing messages as long as the connection
     // to the server is alive
     public void run() {
-        boolean isConnected = true;
+        // start off by sending the total step to the Threadneedle client
+        writeObject(new Messages(Constants.PREFIX_TOTAL_STEPS + this.serverData.getTotalSteps()));
+
         try {
-            while (isConnected && !this.socket.isClosed()) {
-                String message = readMessageFromSocket();
-                //TODO: Temp
-//                logger.logSocketMessage(message, clientId.toString());
-                isConnected = checkIfConnectionTerminated(message);
+            while (isConnected && !this.threadneedleSocket.isClosed()) {
+                checkMessageQueue();
+                if (!hasSpawnedThreadneedleThread.get())
+                    spawnThreadneedleReadObject();
+                Thread.sleep(1);
             }
-            if(this.socket.isConnected())
-                closeSocket();
-        } catch (IOException e) {
+            if(this.threadneedleSocket.isConnected()) closeSocket();
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void checkMessageQueue() {
+        if(isValidClientId()) {
+            var client = this.serverData.getConnectedSocketByClientId(this.clientId);
+            while (!client.isMessageQueueEmpty()) {
+                var object = client.getFromMessageQueue();
+                processObject(object);
+                client.removeFromMessageQueue(object);
+            }
+        }
+    }
+
+    private synchronized void processObject(Object object) {
+        try {
+            if(object.getClass() == Messages.class)
+                readMessageObject((Messages) object);
+
+            else if(object.getClass() == PersonTransaction.class)
+                processPersonTransaction((PersonTransaction) object);
+
+            else if(object.getClass() == BankInformation.class) {
+                handleBankInformationObject((BankInformation) object);
+            }
+        } catch (IOException | InvalidKeyException e) {
+            System.out.printf("Overseer::serverConnection() - %s%n", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void handleBankInformationObject(BankInformation bankInformation) {
+        if(this.serverData.getReadyClients() == this.serverData.getConnectionLimit()) {
+            this.serverData.getBankInformationHashMap().addBankInformation(bankInformation);
+            writeObject(bankInformation);
+        }
+        else {
+//            this.serverData.addBankInformation(this.clientId, bankInformation);
+              this.serverData.getBankInformationHashMap().addBankInformation(bankInformation);
+        }
+    }
+
+    private void spawnThreadneedleReadObject() {
+        this.hasSpawnedThreadneedleThread.set(true);
+        new Thread(() -> {
+            try {
+                readObject(this.threadneedleSocket);
+                this.hasSpawnedThreadneedleThread.set(false);
+            } catch (InvalidObjectException e) {
+                System.err.println("Thread spawn failure, likely because of a disconnected socket");
+            }
+        }).start();
+    }
+
+
+
+    private void readObject(Socket socket) throws InvalidObjectException {
+        try {
+            ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
+            Object object = objectInputStream.readObject();
+
+            if(!isValidClientId())
+                processObject(object);
+
+            else {
+                var client = this.serverData.getConnectedSocketByClientId(this.clientId);
+                client.addToMessageQueue(object);
+            }
+        } catch (Exception e) {
+            throw new InvalidObjectException("Object could not be read");
+        }
+    }
+
+    // processPersonTransaction()
+    // Incoming PersonTransaction object to the client means that the Threadneedle instance is sending
+    // a pending deposit request, so the transaction is stored to the server and then the object is sent
+    // to the ClientTo
+    private void processPersonTransaction(PersonTransaction personTransaction) {
+        this.serverData.addPersonTransaction((personTransaction));
+
+        if(this.clientId.equals(personTransaction.getClientIdTo())) {
+            this.serverData.addPersonTransaction(personTransaction);
+            writeObject(personTransaction);
+        }
+
+        if(this.clientId.equals(personTransaction.getClientIdFrom())) {
+            addToClientMessageQueue(personTransaction.getClientIdTo(), personTransaction);
         }
     }
 
     // Close the socket and remove it from the serverData's currently connected sockets
     private void closeSocket() throws IOException {
-        this.socket.close();
+        this.threadneedleSocket.close();
         this.serverData.decrementCurrentConnections();
 
         if(this.serverData.removeSocketByClientId(this.clientId) == null)
@@ -57,42 +148,54 @@ public class ConnectionThread extends Thread {
                 message.equals(Constants.DISCONNECTED));
     }
 
-    private String readMessageFromSocket() throws IOException {
-        try {
-            String message = getDataInputStream();
-            processMessage(message);
-            return message;
-        } catch (EOFException e) {
-            // This is not a problem because this simply means that
-            // the socket had no message to send, so move along
-        } catch (Exception e) {
-            logger.logConnectionThreadExceptionError(e);
-            return Constants.TERMINATE_CONNECTION;
-        }
-        this.socket.close();
-        return Constants.NO_MESSAGE;
-    }
+    private void readMessageObject(Messages messages) throws IOException, InvalidKeyException {
+        var splitMessage = messages.getMessage().split(Constants.COMMAND_SPLITTER);
 
-    private String getDataInputStream() throws IOException {
-        var dataInputStream = new DataInputStream(socket.getInputStream());
-        return dataInputStream.readUTF();
-    }
-
-    private void processMessage(String message) throws IOException {
-        var splitMessage = message.split(Constants.COMMAND_SPLITTER);
-        var isStepsSet = false;
         for (var word : splitMessage) {
-            if (!isValidClientId())
+            if (!isValidClientId()) {
                 this.isConnectionIdSet = checkForConnectionId(word);
-            if (!isStepsSet)
-                isStepsSet = checkForSteps(word);
-            if(word.contains(Constants.PREFIX_BANK_OBJECT))
-                readBankObject();
-            if(word.contains(Constants.PREFIX_DEPOSIT_TO))
-                readDepositRequest(message);
-            if(word.contains(Constants.PREFIX_TRANSACTION_DONE))
-                removeCompletedTransaction(splitMessage);
+                if (this.isConnectionIdSet) break;
+            }
+            else {
+                if (word.contains(Constants.PREFIX_TRANSACTION_DONE))
+                    removeCompletedTransaction(splitMessage);
+                if (word.contains(Constants.PREFIX_TRANSACTION_FAILED))
+                    revertIncompleteTransfer(splitMessage);
+                if(word.contains(Constants.COMMAND_ALL_CLIENTS_CONNECTED))
+                    writeObject(messages);
+                if(word.contains(Constants.COMMAND_SIMULATION_COMPLETED))
+                    writeObject(messages);
+                if (word.contains(Constants.PREFIX_NEXT_STEP))
+                    writeObject(messages);
+                if(word.contains(Constants.PREFIX_CURRENT_STEP))
+                    setSteps(splitMessage);
+                if(word.contains(Constants.PREFIX_TRANSACTION_DONE))
+                    this.serverData.removePersonTransaction(UUID.fromString(word.split(Constants.COLON)[1]));
+                if(word.contains(Constants.PREFIX_CLIENT_READY)) {
+                    //todo: very prone if same client sends 2x, fix
+                    this.serverData.incrementReadyClients();
+                    System.out.println("CLIENT READY: " + word.split(Constants.COLON)[1]);
+                }
+                this.isConnected = checkIfConnectionTerminated(word);
+            }
         }
+//        if(this.clientId != null)
+//            logger.logSocketMessage(messages.getMessage(), clientId.toString());
+    }
+
+    // If a transfer does not go through to its recipient, the sender will be notified to be able to cancel the withdrawal
+    private void revertIncompleteTransfer(String[] splitMessage) throws InvalidKeyException {
+        UUID transactionId = null;
+        for(var word : splitMessage) {
+            if(word.contains(Constants.PREFIX_TRANSACTION_ID))
+                transactionId = UUID.fromString(word.split(Constants.COLON)[1]);
+        }
+        if(transactionId == null) throw new InvalidKeyException("Transaction ID not found");
+
+        PersonTransaction personTransaction = this.serverData.getPersonTransactionById(transactionId);
+        addToClientMessageQueue(personTransaction.getClientIdFrom(), new Messages(
+                Constants.PREFIX_REVERT_TRANSACTION + transactionId
+        ));
     }
 
     private void removeCompletedTransaction(String[] splitMessage) {
@@ -104,80 +207,25 @@ public class ConnectionThread extends Thread {
         }
     }
 
-    private void readDepositRequest(String message) throws IOException {
-        String[] splitMessage = message.split(Constants.COMMAND_SPLITTER);
-        String personName = null;
-        String bankName = null;
-        UUID clientTo = null;
-        UUID clientFrom = null;
-        long amount = -1;
-        int currentStep = -1;
-
-        for(var word : splitMessage) {
-            if(word.contains(Constants.PREFIX_PERSON_NAME))
-                personName = word.split(Constants.COLON)[1];
-            if(word.contains(Constants.PREFIX_BANK_NAME))
-                bankName = word.split(Constants.COLON)[1];
-            if(word.contains(Constants.PREFIX_CLIENT_TO))
-                clientTo = UUID.fromString(word.split(Constants.COLON)[1]);
-            if(word.contains(Constants.PREFIX_AMOUNT))
-                amount = Long.parseLong(word.split(Constants.COLON)[1]);
-            if(word.contains(Constants.PREFIX_CLIENT_FROM))
-                clientFrom = UUID.fromString(word.split(Constants.COLON)[1]);
-            if(word.contains(Constants.PREFIX_TRANSFER_AT_STEP))
-                currentStep = Integer.parseInt(word.split(Constants.COLON)[1]);
-        }
-
-        if(isDepositDataValid(clientTo, personName, bankName, amount, currentStep, clientFrom)) {
-            var personTransaction = new PersonTransaction(clientTo, clientFrom, personName, amount, currentStep, bankName);
-            sendDepositRequestToClient(personTransaction.toString(), clientTo);
-            serverData.addPersonTransaction(personTransaction);
-            logger.logDepositTo(clientTo.toString(), personName, bankName, amount, currentStep);
-        }
+    // writeObjectToClientId()
+    // This functions sends objects to another client based on the ID that is passed in
+    private synchronized void addToClientMessageQueue(UUID clientId, Object object) {
+        var clientSocket = this.serverData.getConnectedSocketByClientId(clientId);
+        clientSocket.addToMessageQueue(object);
     }
 
-    private void sendDepositRequestToClient(String message, UUID clientTo) throws IOException {
-        var clientToSocket = this.serverData.getConnectedSockets().get(clientTo);
-        var outputStream = clientToSocket.getSocket().getOutputStream();
-        var dataOutputStream = new DataOutputStream(outputStream);
-        dataOutputStream.writeUTF(message);
-        dataOutputStream.flush();
-    }
-
-    private boolean isDepositDataValid(UUID clientTo, String personName, String bankName, long amount, int currentStep, UUID clientFrom) {
-        return clientTo != null &&
-                personName != null &&
-                bankName != null &&
-                amount > 0 && currentStep > 0 &&
-                clientFrom != null &&
-                clientFrom.equals(this.clientId);
-    }
-
-    private void readBankObject() {
+    public synchronized void writeObject(Object object) {
         try {
-            var objectInputStream = new ObjectInputStream(this.socket.getInputStream());
-            var bankInformation = (BankInformation) objectInputStream.readObject();
-            this.serverData.addBankInformation(this.clientId, bankInformation);
-        } catch (ClassNotFoundException | IOException e) {
-            e.printStackTrace();
+            ObjectOutputStream outputStream = new ObjectOutputStream(threadneedleSocket.getOutputStream());
+            outputStream.writeObject(object);
+            outputStream.flush();
+        } catch (IOException e) {
+            System.err.println("WriteObject error, likely because of a disconnected socket");
         }
     }
 
     private boolean isValidClientId() {
         return this.isConnectionIdSet && this.clientId != null;
-    }
-
-    private boolean confirmTotalSteps(String word) {
-        if(word.contains(Constants.PREFIX_TOTAL_STEPS)) {
-            var totalClientSteps = Integer.valueOf(word.split(Constants.COLON)[1]);
-            // If for some reason the client and server don't have matching steps
-            if(!totalClientSteps.equals(this.serverData.getTotalSteps())) {
-                logger.logStepMismatchError(totalClientSteps, this.serverData.getTotalSteps());
-                throw new IllegalArgumentException();
-            }
-            return true;
-        }
-        return false;
     }
 
     private boolean validateSteps(Integer completedStep) {
@@ -186,42 +234,32 @@ public class ConnectionThread extends Thread {
                 completedStep == this.serverData.getCurrentStep().get();
     }
 
-    private boolean checkForSteps(String word)  {
-        if (word.contains(Constants.PREFIX_CURRENT_STEP)) {
-            var completedStep = Integer.valueOf(word.split(Constants.COLON)[1]);
+    private void setSteps(String[] splitMessage)  {
+        for(var word : splitMessage) {
+            if (word.contains(Constants.PREFIX_CURRENT_STEP)) {
+                var completedStep = Integer.valueOf(word.split(Constants.COLON)[1]);
 
-            if (validateSteps(completedStep)) {
-                incrementClientStep();
-                return true;
-            }
-            else {
-                var serverSteps = this.serverData.getCurrentStep().get();
-                logger.logStepMismatchError(completedStep, serverSteps, this.clientId.toString());
+                if (validateSteps(completedStep)) {
+                    this.serverData.incrementStepOfConnectedSocketByClientId(this.clientId);
+                }
+                else {
+                    var serverSteps = this.serverData.getCurrentStep().get();
+                    logger.logStepMismatchError(completedStep, serverSteps, this.clientId.toString());
+                }
             }
         }
-        return false;
-    }
-
-    private void incrementClientStep() {
-        this.serverData.incrementStepOfConnectedSocketByClientId(this.clientId);
     }
 
     // This sets the ClientID of the socket that the Threadneedle program is connected to
-    private boolean checkForConnectionId(String word) throws IOException {
+    private boolean checkForConnectionId(String word) {
         if (word.contains(Constants.PREFIX_SET_CLIENT_ID)) {
             UUID clientId = UUID.fromString(word.split(Constants.COLON)[1]);
             setClientId(clientId);
-            sendDataOutputStream(Constants.PREFIX_RECEIVED_CLIENT_ID + this.clientId);
-            this.serverData.addSocket(this.socket, this.clientId);
+            writeObject(new Messages(Constants.PREFIX_RECEIVED_CLIENT_ID + this.clientId));
+            this.serverData.addConnectedSocket(this.threadneedleSocket, this.clientId);
             return true;
         }
         return false;
-    }
-
-    private void sendDataOutputStream(String message) throws IOException {
-        DataOutputStream dataOutputStream = new DataOutputStream(this.socket.getOutputStream());
-        dataOutputStream.writeUTF(message);
-        dataOutputStream.flush();
     }
 
     private void setClientId(UUID clientId) {

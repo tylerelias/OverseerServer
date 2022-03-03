@@ -96,8 +96,8 @@ public class Logger {
         log(String.format("Client ID has been set: %s", clientId));
     }
 
-    public void logDepositTo(String clientId, String personName, String bankName, long amount, int currentStep) {
-        log(String.format("DepositTo: %s, Bank: %s, Amount: %s, ClientID: %s, Current Step: %s", personName, bankName, amount, clientId, currentStep));
+    public void logDepositTo(String clientId, String personName, Integer bankId, long amount, int currentStep) {
+        log(String.format("DepositTo: %s, Bank: %s, Amount: %s, ClientID: %s, Current Step: %s", personName, bankId, amount, clientId, currentStep));
     }
 
     public void logInvalidArgumentError() {

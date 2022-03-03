@@ -1,43 +1,36 @@
 package overseer;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BankInformation implements Serializable {
 
-    private final ConcurrentHashMap<UUID, ArrayList<AccountInformation>> informationHashMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, HashMap<Integer, AccountInformation>> bankInformationHashMap = new ConcurrentHashMap<>();
 
-    //todo: refactor
-    public void addToBankInformationItem(UUID clientId, AccountInformation accountInformation) {
-        ArrayList<AccountInformation> copy = this.informationHashMap.get(clientId);
-        if(copy != null) {
-            copy.add(accountInformation);
-            informationHashMap.put(clientId, copy);
-        }
-        else {
-            ArrayList<AccountInformation> a = new ArrayList<>();
-            a.add(accountInformation);
-            informationHashMap.put(clientId, a);
-        }
+    public ConcurrentHashMap<UUID, HashMap<Integer, AccountInformation>> getBankInformationHashMap() {
+        return bankInformationHashMap;
     }
 
-    public void addToBankInformationList(UUID clientId, ArrayList<AccountInformation> accountInformation) {
-        ArrayList<AccountInformation> copy = this.informationHashMap.get(clientId);
-        if(copy != null) {
-            copy.addAll(accountInformation);
-            informationHashMap.put(clientId, copy);
-        }
+    public void addAccountInformationByClientId(UUID clientId, HashMap<Integer, AccountInformation> accountInformation) {
+        if(bankInformationHashMap.get(clientId) == null)
+            bankInformationHashMap.put(clientId, accountInformation);
         else
-            informationHashMap.put(clientId, accountInformation);
+            for(AccountInformation item : accountInformation.values())
+                bankInformationHashMap.get(clientId).putIfAbsent(item.getAccountId(), item);
     }
 
-    public ConcurrentHashMap<UUID, ArrayList<AccountInformation>> getInformationHashMap() {
+    public HashMap<String, AccountInformation> getAccountInformationByClientId(UUID clientId) {
+        Collection<AccountInformation> accountInformation = bankInformationHashMap.get(clientId).values();
+        HashMap<String, AccountInformation> informationHashMap = new HashMap<>();
+        accountInformation.forEach((account -> informationHashMap.put(account.getOwnerId(), account)));
         return informationHashMap;
     }
 
-    public ArrayList<AccountInformation> getAccountInformation(UUID clientId) {
-        return informationHashMap.get(clientId);
+    // Todo: Explain
+    public void addBankInformation(BankInformation bankInformation) {
+        this.bankInformationHashMap.putAll(bankInformation.getBankInformationHashMap());
     }
 }
