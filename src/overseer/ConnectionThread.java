@@ -63,9 +63,9 @@ public class ConnectionThread extends Thread {
             else if(object.getClass() == PersonTransaction.class)
                 processPersonTransaction((PersonTransaction) object);
 
-            else if(object.getClass() == BankInformation.class) {
+            else if(object.getClass() == BankInformation.class)
                 handleBankInformationObject((BankInformation) object);
-            }
+
         } catch (IOException | InvalidKeyException e) {
             System.out.printf("Overseer::serverConnection() - %s%n", e.getMessage());
             e.printStackTrace();
@@ -157,26 +157,27 @@ public class ConnectionThread extends Thread {
                 if (this.isConnectionIdSet) break;
             }
             else {
-                if (word.contains(Constants.PREFIX_TRANSACTION_DONE))
-                    removeCompletedTransaction(splitMessage);
-                if (word.contains(Constants.PREFIX_TRANSACTION_FAILED))
-                    revertIncompleteTransfer(splitMessage);
-                if(word.contains(Constants.COMMAND_ALL_CLIENTS_CONNECTED))
-                    writeObject(messages);
-                if(word.contains(Constants.COMMAND_SIMULATION_COMPLETED))
-                    writeObject(messages);
+                // PREFIX_NEXT_STEP comes from the server about what the next step N will be
+                // this message is passed on to the Threadneedle client
                 if (word.contains(Constants.PREFIX_NEXT_STEP))
                     writeObject(messages);
-                if(word.contains(Constants.PREFIX_CURRENT_STEP))
+                else if(word.contains(Constants.PREFIX_CURRENT_STEP))
                     setSteps(splitMessage);
-                if(word.contains(Constants.PREFIX_TRANSACTION_DONE))
+                else if(word.contains(Constants.PREFIX_TRANSACTION_DONE))
                     this.serverData.removePersonTransaction(UUID.fromString(word.split(Constants.COLON)[1]));
-                if(word.contains(Constants.PREFIX_CLIENT_READY)) {
+                else if (word.contains(Constants.PREFIX_TRANSACTION_FAILED))
+                    revertIncompleteTransfer(splitMessage);
+                else if(word.contains(Constants.COMMAND_ALL_CLIENTS_CONNECTED))
+                    writeObject(messages);
+                else if(word.contains(Constants.COMMAND_SIMULATION_COMPLETED))
+                    writeObject(messages);
+                else if(word.contains(Constants.PREFIX_CLIENT_READY)) {
                     //todo: very prone if same client sends 2x, fix
                     this.serverData.incrementReadyClients();
                     System.out.println("CLIENT READY: " + word.split(Constants.COLON)[1]);
                 }
-                this.isConnected = checkIfConnectionTerminated(word);
+                else
+                    this.isConnected = checkIfConnectionTerminated(word);
             }
         }
 //        if(this.clientId != null)
