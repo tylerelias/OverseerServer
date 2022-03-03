@@ -7,13 +7,13 @@ Its job is to act as a middleman between multiple Threadneedle simulations that 
 Before the Overseer, Threadneedle was bound to simulating a single machine. With the introduction of the Overseer the size capacity is increased greatly.
 The Overseer is responsible for guaranteeing the following:
 
-- Only a set amount *n* of agents can connect to the Overseer at a given time
+- Only a set amount of agents *n* can connect to the Overseer at a given time
 - The clients can only begin to 'step' once the connection limit has been reached, and all clients have reported as ready to the Overseer
 - All connected clients will step in parallel. The Overseer will be in charge of allowing clients to take a step *n+1*
 - The Overseer is in charge of sharing the existing Accounts that each Threadneedle client has between other clients, so they know who they can transfer to
 - Logging events with a timestamp
 - Automatically setting the step limit for all Threadneedle clients that are connected
-- The Overseer restricts all Threadneedle clients to step to its set Total steps
+- The Overseer restricts all Threadneedle clients to step past its set Total Steps
 - Clients can make a deposit transaction to another connected client
 
 ### Setup Steps
@@ -40,6 +40,6 @@ Example argument to run would be:
 
 - Currently, the Overseer stops at the final step *n*, but does not terminate all connections. Not a fatal bug, but an annoying one.
 - No Completed transactions overview. Simply save a completed transaction to a CompletedTransactions: *Hashmap<TransactionID, PersonTransaction>*
-
+- Add argument that enables debug output (more logs printed) and also argument that saves the log to a special log file
 
 Notice: There has no work done on security for this server since it will be communicating with clients within a closed local environment. **Do not run it on an open network**. 
