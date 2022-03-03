@@ -140,7 +140,7 @@ public class Server {
         if (this.serverData.getCurrentConnections().get() != this.serverData.getConnectionLimit())
             return false;
 
-        for (ConnectedSockets socket : this.serverData.getConnectedSockets().values()) {
+        for (ConnectedSocket socket : this.serverData.getConnectedSockets().values()) {
             if (socket.getCurrentStep() != this.serverData.getCurrentStep().get())
                 return false;
         }

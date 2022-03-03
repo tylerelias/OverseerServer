@@ -21,7 +21,7 @@ public class ServerData {
     private final Integer portNumber;                   // the port number of the server itself
     private final Logger logger = new Logger(); // to log stuff that goes down
     // the sockets (threadneedle programs) that are connected, along with important information about them
-    private final ConcurrentHashMap<UUID, ConnectedSockets> connectedSockets;
+    private final ConcurrentHashMap<UUID, ConnectedSocket> connectedSockets;
     // keeps track of the pending transactions that are taking place between clients
     private final ConcurrentHashMap<UUID, PersonTransaction> pendingTransactions;
     // the finished transactions of the simulation
@@ -68,14 +68,14 @@ public class ServerData {
     public void addConnectedSocket(Socket threadneedleSocket, UUID clientId) {
         if(this.connectedSockets.containsKey(clientId))
             throw new KeyAlreadyExistsException();
-        this.connectedSockets.putIfAbsent(clientId, new ConnectedSockets(threadneedleSocket, clientId, 1));
+        this.connectedSockets.putIfAbsent(clientId, new ConnectedSocket(threadneedleSocket, clientId, 1));
     }
 
-    public ConcurrentHashMap<UUID, ConnectedSockets> getConnectedSockets() {
+    public ConcurrentHashMap<UUID, ConnectedSocket> getConnectedSockets() {
         return this.connectedSockets;
     }
 
-    public ConnectedSockets getConnectedSocketByClientId(UUID clientId) {
+    public ConnectedSocket getConnectedSocketByClientId(UUID clientId) {
         for (var socket : this.connectedSockets.values()) {
             if(socket.getClientId().equals(clientId))
                 return socket;
@@ -83,7 +83,7 @@ public class ServerData {
         throw new NoSuchElementException();
     }
 
-    public ConnectedSockets removeSocketByClientId(UUID clientId) {
+    public ConnectedSocket removeSocketByClientId(UUID clientId) {
         return this.connectedSockets.remove(clientId);
     }
 

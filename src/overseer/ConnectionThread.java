@@ -7,8 +7,12 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Each client that is connected to the simulation is essentially dropped in here as a thread from the Server class.
+ * Threadneedle's messages and objects come in here and be processed and worked with and messages are sent through
+ * this class to a specific Threadneedle client.
+ */
 public class ConnectionThread extends Thread {
-    // Info needed to verify and communicate with client
     private final Socket threadneedleSocket;
     private final Logger logger;
     // There data in serverData is used between Server.java and the threads in ConnectionThread
@@ -25,8 +29,9 @@ public class ConnectionThread extends Thread {
         this.isConnectionIdSet = false;
     }
 
-    // Socket will keep reading/writing messages as long as the connection
-    // to the server is alive
+    /**
+     * Socket will keep reading/writing messages as long as the connection to the server is alive
+     */
     public void run() {
         // start off by sending the total step to the Threadneedle client
         writeObject(new Messages(Constants.PREFIX_TOTAL_STEPS + this.serverData.getTotalSteps()));
@@ -44,6 +49,9 @@ public class ConnectionThread extends Thread {
         }
     }
 
+    /**
+     * Checks if there have been any messages added to the client's message queue
+     */
     private void checkMessageQueue() {
         if(isValidClientId()) {
             var client = this.serverData.getConnectedSocketByClientId(this.clientId);
@@ -55,6 +63,10 @@ public class ConnectionThread extends Thread {
         }
     }
 
+    /**
+     * Checks to see what action needs to be taken with the object that is being passed in
+     * @param object The object that is being passed in
+     */
     private synchronized void processObject(Object object) {
         try {
             if(object.getClass() == Messages.class)
@@ -72,17 +84,25 @@ public class ConnectionThread extends Thread {
         }
     }
 
+    /**
+     * Very trying and fragile function, could need to looking into in the future. But here the BankInformation
+     * object gets updated in the ServerData class, and it gets sent to the connected client
+     * @param bankInformation The incoming object with the BankIformation data
+     */
     private void handleBankInformationObject(BankInformation bankInformation) {
         if(this.serverData.getReadyClients() == this.serverData.getConnectionLimit()) {
             this.serverData.getBankInformationHashMap().addBankInformation(bankInformation);
             writeObject(bankInformation);
         }
-        else {
-//            this.serverData.addBankInformation(this.clientId, bankInformation);
-              this.serverData.getBankInformationHashMap().addBankInformation(bankInformation);
-        }
+        else
+          this.serverData.getBankInformationHashMap().addBankInformation(bankInformation);
     }
 
+    /**
+     * Because the readObject() is a blocking call, it is spawned with a new Thread.
+     * This is quite expensive and resource intensive, but the only thing I was
+     * able to come up with at the time
+     */
     private void spawnThreadneedleReadObject() {
         this.hasSpawnedThreadneedleThread.set(true);
         new Thread(() -> {
@@ -95,8 +115,10 @@ public class ConnectionThread extends Thread {
         }).start();
     }
 
-
-
+    /**
+     * A blocking call that reads the object input stream and passes it in to processObject
+     * @param socket the socket being read from
+     */
     private void readObject(Socket socket) throws InvalidObjectException {
         try {
             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
@@ -114,10 +136,12 @@ public class ConnectionThread extends Thread {
         }
     }
 
-    // processPersonTransaction()
-    // Incoming PersonTransaction object to the client means that the Threadneedle instance is sending
-    // a pending deposit request, so the transaction is stored to the server and then the object is sent
-    // to the ClientTo
+    /**
+     * Incoming PersonTransaction object to the client means that the Threadneedle instance is sending
+     * a pending deposit request, so the transaction is stored to the server and then the object is sent
+     * to the ClientTo
+     * @param personTransaction transaction details
+     */
     private void processPersonTransaction(PersonTransaction personTransaction) {
         this.serverData.addPersonTransaction((personTransaction));
 
@@ -126,12 +150,13 @@ public class ConnectionThread extends Thread {
             writeObject(personTransaction);
         }
 
-        if(this.clientId.equals(personTransaction.getClientIdFrom())) {
+        if(this.clientId.equals(personTransaction.getClientIdFrom()))
             addToClientMessageQueue(personTransaction.getClientIdTo(), personTransaction);
-        }
     }
 
-    // Close the socket and remove it from the serverData's currently connected sockets
+    /**
+     * Close the socket and remove it from the serverData's currently connected sockets
+     */
     private void closeSocket() throws IOException {
         this.threadneedleSocket.close();
         this.serverData.decrementCurrentConnections();
@@ -148,6 +173,11 @@ public class ConnectionThread extends Thread {
                 message.equals(Constants.DISCONNECTED));
     }
 
+    /**
+     * Takes in a string message and checks what type of command it is and calls the correct function
+     * according to the command type
+     * @param messages the incoming message that is being parsed
+     */
     private void readMessageObject(Messages messages) throws IOException, InvalidKeyException {
         var splitMessage = messages.getMessage().split(Constants.COMMAND_SPLITTER);
 
@@ -182,7 +212,11 @@ public class ConnectionThread extends Thread {
 //            logger.logSocketMessage(messages.getMessage(), clientId.toString());
     }
 
-    // If a transfer does not go through to its recipient, the sender will be notified to be able to cancel the withdrawal
+    /**
+     * If a transfer does not go through to its recipient, the sender will be notified to be able to cancel the withdrawal
+     * @param splitMessage
+     * @throws InvalidKeyException if no transaction with the given ID is found, the exception is thrown
+     */
     private void revertIncompleteTransfer(String[] splitMessage) throws InvalidKeyException {
         UUID transactionId = null;
         for(var word : splitMessage) {
@@ -206,13 +240,20 @@ public class ConnectionThread extends Thread {
         }
     }
 
-    // writeObjectToClientId()
-    // This functions sends objects to another client based on the ID that is passed in
+    /**
+     * This functions sends objects to another client based on the ID that is passed in
+     * @param clientId the client queue that it will be added to
+     * @param object the object being added
+     */
     private synchronized void addToClientMessageQueue(UUID clientId, Object object) {
         var clientSocket = this.serverData.getConnectedSocketByClientId(clientId);
         clientSocket.addToMessageQueue(object);
     }
 
+    /**
+     * Sends the object to the ConnectionThread's socket
+     * @param object
+     */
     public synchronized void writeObject(Object object) {
         try {
             ObjectOutputStream outputStream = new ObjectOutputStream(threadneedleSocket.getOutputStream());
@@ -227,29 +268,40 @@ public class ConnectionThread extends Thread {
         return this.isConnectionIdSet && this.clientId != null;
     }
 
+    /**
+     * Validate that the server's current step matches the client's current step
+     * @param completedStep
+     * @return true of step is valid, false if not
+     */
     private boolean validateSteps(Integer completedStep) {
         return  Objects.equals(this.serverData.getConnectedSockedStepByClientId(this.clientId),
                 this.serverData.getCurrentStep().get()) ||
                 completedStep == this.serverData.getCurrentStep().get();
     }
 
+    /**
+     * Parse and validate the step being passed in
+     * @param splitMessage
+     */
     private void setSteps(String[] splitMessage)  {
         for(var word : splitMessage) {
             if (word.contains(Constants.PREFIX_CURRENT_STEP)) {
                 var completedStep = Integer.valueOf(word.split(Constants.COLON)[1]);
 
-                if (validateSteps(completedStep)) {
+                if (validateSteps(completedStep))
                     this.serverData.incrementStepOfConnectedSocketByClientId(this.clientId);
-                }
-                else {
-                    var serverSteps = this.serverData.getCurrentStep().get();
-                    logger.logStepMismatchError(completedStep, serverSteps, this.clientId.toString());
-                }
+                else
+                    logger.logStepMismatchError(completedStep, this.serverData.getCurrentStep().get(), this.clientId.toString());
+
             }
         }
     }
 
-    // This sets the ClientID of the socket that the Threadneedle program is connected to
+    /**
+     * This sets the ClientID of the socket that the Threadneedle program is connected to
+     * @param word
+     * @return
+     */
     private boolean checkForConnectionId(String word) {
         if (word.contains(Constants.PREFIX_SET_CLIENT_ID)) {
             UUID clientId = UUID.fromString(word.split(Constants.COLON)[1]);

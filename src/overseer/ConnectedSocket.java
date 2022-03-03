@@ -5,14 +5,18 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConnectedSockets {
+/**
+ * Stores all the essential information for the connected client.
+ * The usage of the class is in ServerData, where it is stored in a HashMap<ClientID, ConnectionThread>
+ */
+public class ConnectedSocket {
     private final UUID clientId;
 
     private final Socket threadneedleSocket;
     private final AtomicInteger currentStep;
     private final ConcurrentLinkedQueue<Object> messageQueue = new ConcurrentLinkedQueue<>();
 
-    ConnectedSockets(Socket threadneedleSocket, UUID clientId, Integer currentStep) {
+    ConnectedSocket(Socket threadneedleSocket, UUID clientId, Integer currentStep) {
         this.threadneedleSocket = threadneedleSocket;
         this.currentStep = new AtomicInteger(currentStep);
         this.clientId = clientId;
