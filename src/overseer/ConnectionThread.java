@@ -171,11 +171,9 @@ public class ConnectionThread extends Thread {
                     writeObject(messages);
                 else if(word.contains(Constants.COMMAND_SIMULATION_COMPLETED))
                     writeObject(messages);
-                else if(word.contains(Constants.PREFIX_CLIENT_READY)) {
-                    //todo: very prone if same client sends 2x, fix
+                //todo: very prone if same client sends 2x, fix
+                else if(word.contains(Constants.PREFIX_CLIENT_READY))
                     this.serverData.incrementReadyClients();
-                    System.out.println("CLIENT READY: " + word.split(Constants.COLON)[1]);
-                }
                 else
                     this.isConnected = checkIfConnectionTerminated(word);
             }
