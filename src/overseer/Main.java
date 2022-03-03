@@ -6,7 +6,6 @@ import java.util.Objects;
 
 public class Main {
 
-
     public static void main(String[] args) {
         ServerData serverData;
         int stepNumber = 0;
@@ -40,7 +39,7 @@ public class Main {
             }
 
             logger.logArguments(stepNumber, connectionLimit);
-
+            // needs to be final because of the new Thread() call, don't want the data to change...
             Integer finalStepNumber = stepNumber;
             Integer finalConnectionLimit = connectionLimit;
             serverData = new ServerData(finalStepNumber, finalConnectionLimit, portNumber);

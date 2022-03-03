@@ -41,5 +41,6 @@ Example argument to run would be:
 - Currently, the Overseer stops at the final step *n*, but does not terminate all connections. Not a fatal bug, but an annoying one.
 - No Completed transactions overview. Simply save a completed transaction to a CompletedTransactions: *Hashmap<TransactionID, PersonTransaction>*
 - Add argument that enables debug output (more logs printed) and also argument that saves the log to a special log file
+- --help flag with info
 
 Notice: There has no work done on security for this server since it will be communicating with clients within a closed local environment. **Do not run it on an open network**. 
