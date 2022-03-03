@@ -1,15 +1,15 @@
 # Overseer Server
 
 The Overseer is a server that goes with the [Threadneedle](https://github.com/jackymallett/Threadneedle) economic simulator.
-It is a replication og a Real-time gross settlement system, that settle up trans actions in real-time.
+It is a replication og a Real-time gross settlement system, that settle up transactions in real-time.
 
 Its job is to act as a middleman between multiple Threadneedle simulations that will simulate in parallel.
 Before the Overseer, Threadneedle was bound to simulating a single machine. With the introduction of the Overseer the size capacity is increased greatly.
 The Overseer is responsible for guaranteeing the following:
 
-- Only a set amount $n$ of agents can connect to the Overseer at a given time
+- Only a set amount *n* of agents can connect to the Overseer at a given time
 - The clients can only begin to 'step' once the connection limit has been reached, and all clients have reported as ready to the Overseer
-- All connected clients will step in parallel. The Overseer will be in charge of allowing clients to take a step $n+1$
+- All connected clients will step in parallel. The Overseer will be in charge of allowing clients to take a step *n+1*
 - The Overseer is in charge of sharing the existing Accounts that each Threadneedle client has between other clients, so they know who they can transfer to
 - Logging events with a timestamp
 - Automatically setting the step limit for all Threadneedle clients that are connected
@@ -22,9 +22,9 @@ Coming soon, was always tested in an IDE.
 
 ### Program arguments
 
-`-s [(int)NUMBER_OF_STEPS_HERE]` $\rightarrow$ this command sets the number of steps that all Threadneedle clients will be taking in the simulation
+`-s [(int)NUMBER_OF_STEPS_HERE]` - this command sets the number of steps that all Threadneedle clients will be taking in the simulation
 
-`-c [(int)CLIENT_CONNECTION_LIMIT]` $\rightarrow$ this command sets the limit of how many Threadneedle clients will be allowed to connect
+`-c [(int)CLIENT_CONNECTION_LIMIT]` - this command sets the limit of how many Threadneedle clients will be allowed to connect
 
 Example argument to run would be:
 
@@ -38,7 +38,7 @@ Example argument to run would be:
 
 ### Bugs / Missing features
 
-- Currently, the Overseer stops at the final step $n$, but does not terminate all connections. Not a fatal bug, but an annoying one.
+- Currently, the Overseer stops at the final step *n*, but does not terminate all connections. Not a fatal bug, but an annoying one.
 - No Completed transactions overview. Simply save a completed transaction to a CompletedTransactions: *Hashmap<TransactionID, PersonTransaction>*
 
 
