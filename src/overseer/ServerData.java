@@ -23,9 +23,9 @@ public class ServerData {
     // the sockets (threadneedle programs) that are connected, along with important information about them
     private final ConcurrentHashMap<UUID, ConnectedSocket> connectedSockets;
     // keeps track of the pending transactions that are taking place between clients
-    private final ConcurrentHashMap<UUID, PersonTransaction> pendingTransactions;
+    private final ConcurrentHashMap<UUID, AccountTransaction> pendingTransactions;
     // the finished transactions of the simulation
-    private final ConcurrentHashMap<UUID, PersonTransaction> completedTransactions;
+    private final ConcurrentHashMap<UUID, AccountTransaction> completedTransactions;
     // Stores information about all banks that the clients have in their simulation
     private final BankInformation bankInformationHashMap;
     private final AtomicBoolean hasSimulationStarted = new AtomicBoolean(false);
@@ -38,9 +38,9 @@ public class ServerData {
         this.currentConnections = new AtomicInteger(0);
         this.connectedSockets = new ConcurrentHashMap<>();
         this.pendingTransactions = new ConcurrentHashMap<>();
+        this.completedTransactions = new ConcurrentHashMap<>();
         this.bankInformationHashMap = new BankInformation();
-        completedTransactions = new ConcurrentHashMap<>();
-        readyClients = new AtomicInteger(0);
+        this.readyClients = new AtomicInteger(0);
     }
 
     public void incrementReadyClients() {
@@ -133,23 +133,23 @@ public class ServerData {
         this.currentStep.incrementAndGet();
     }
 
-    public void addPersonTransaction(PersonTransaction personTransaction) {
-        this.pendingTransactions.put(personTransaction.transactionId, personTransaction);
+    public void addToPendingTransactions(AccountTransaction accountTransaction) {
+        this.pendingTransactions.put(accountTransaction.transactionId, accountTransaction);
     }
 
-    public void removePersonTransaction(UUID transactionId) {
+    public void removePendingTransaction(UUID transactionId) {
         this.pendingTransactions.remove(transactionId);
     }
 
-    public boolean isPersonTransactionEmpty() {
+    public boolean isPendingTransactionEmpty() {
         return this.pendingTransactions.isEmpty();
     }
 
-    public ConcurrentHashMap<UUID, PersonTransaction> getPendingTransactions() {
+    public ConcurrentHashMap<UUID, AccountTransaction> getPendingTransactions() {
         return pendingTransactions;
     }
 
-    public PersonTransaction getPersonTransactionById(UUID transactionId) {
+    public AccountTransaction getPendingTransactionById(UUID transactionId) {
         return this.pendingTransactions.get(transactionId);
     }
 
@@ -185,5 +185,14 @@ public class ServerData {
 
     public boolean getHasSimulationStarted() {
         return this.hasSimulationStarted.get();
+    }
+
+    public void addCompletedTransaction(UUID transactionId) {
+        var accountTransaction = this.pendingTransactions.get(transactionId);
+        this.completedTransactions.put(accountTransaction.getTransactionId(), accountTransaction);
+    }
+
+    public AccountTransaction getCompletedTransactionById(UUID transactionId) {
+        return this.completedTransactions.get(transactionId);
     }
 }

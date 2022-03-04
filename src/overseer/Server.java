@@ -3,6 +3,7 @@ package overseer;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
+import java.util.UUID;
 
 /**
  * The server accepts the set amount of connections of clients. It validates that the data and conditions are met to
@@ -15,9 +16,11 @@ public class Server {
     private final Logger logger = new Logger();
     private ServerData serverData; // where all the important server data is stored, sockets access it too
     private ServerSocket serverSocket;
+    private UUID serverId;
 
     public void start(ServerData serverData) {
         this.serverData = serverData;
+        this.serverId = UUID.randomUUID();
 
         try {
             this.serverSocket = new ServerSocket(this.serverData.getPortNumber());
@@ -67,10 +70,8 @@ public class Server {
      */
     private void sendClientsSimulationInformation() {
         var clientIds = this.serverData.convertConnectedClientIdToUUID();
-        sendAllClientsMessage(
-            Constants.COMMAND_ALL_CLIENTS_CONNECTED + Constants.COMMAND_SPLITTER +
-            Constants.PREFIX_RECEIVED_CLIENT_ID + clientIds
-        );
+        sendAllClientsObject(new Messages(Constants.PREFIX_SERVER_ID + this.serverId, this.serverId));
+        sendAllClientsObject(new Messages(Constants.COMMAND_ALL_CLIENTS_CONNECTED + clientIds, serverId));
         sendAllClientsObject(this.serverData.getBankInformationHashMap());
     }
 
@@ -92,7 +93,7 @@ public class Server {
     private boolean validateSteppingConditions() throws InterruptedException {
         return areAllConnectionThreadsAtSameStep() &&
                 !isSimulationCompleted() &&
-                this.serverData.isPersonTransactionEmpty();
+                this.serverData.isPendingTransactionEmpty();
     }
 
     /**
@@ -101,8 +102,8 @@ public class Server {
      */
     private boolean isSimulationCompleted() throws InterruptedException {
         if(this.serverData.getCurrentStep().get() == this.serverData.getTotalSteps()) {
-            if(!this.serverData.isPersonTransactionEmpty())
-                while (!this.serverData.isPersonTransactionEmpty()) { Thread.sleep(1); }
+            if(!this.serverData.isPendingTransactionEmpty())
+                while (!this.serverData.isPendingTransactionEmpty()) { Thread.sleep(1); }
             return true;
         }
         return false;
@@ -113,22 +114,23 @@ public class Server {
      */
     private void tellAllClientsToStep() {
         logger.logTellAllClientsToStep(this.serverData.getCurrentStep().get());
-        sendAllClientsMessage(
+        sendAllClientsObject(new Messages(
             Constants.PREFIX_NEXT_STEP
-            + (this.serverData.getCurrentStep().get()));
+            + (this.serverData.getCurrentStep().get()), this.serverId)
+        );
     }
 
     /**
      * Sends a message to all clients that the simulation as completed and terminate connection message as well
      */
     private void tellAllClientsSimulationIsCompleted() {
-        sendAllClientsMessage(
+        sendAllClientsObject(new Messages(
                 Constants.PREFIX_SIMULATION +
                 Constants.COMMAND_SIMULATION_COMPLETED +
                 Constants.COMMAND_SPLITTER +
                 Constants.PREFIX_CONNECTION +
                 Constants.TERMINATE_CONNECTION
-        );
+        , serverId));
         this.serverData.closeAllSockets();
     }
 
@@ -180,38 +182,13 @@ public class Server {
     }
 
     /**
-     * Sends a message to all clients in the simulation. Note: Since this basically just wraps the String message
-     * into a Messages object, one could just refactor the code to all sendAllClientsObject(Object object) function
-     * in the future
-     * @param message the message that is going to be sent to all the connected clients
-     */
-    private void sendAllClientsMessage(String message) {
-        var connectedSockets = this.serverData.getConnectedSockets().values();
-        connectedSockets.forEach(socket -> {
-            try {
-                var connectedSocket = socket.getThreadneedleSocket();
-                if (!connectedSocket.isClosed()) {
-                    socket.addToMessageQueue(
-                        new Messages(Constants.PREFIX_CLIENT_ID +
-                        socket.getClientId() +
-                        Constants.COMMAND_SPLITTER +
-                        message));
-                } else
-                    logger.logSocketClosed(socket.getClientId().toString());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-    /**
      *  A function that waits until all clients have completed their steps and if all pending transactions have been clear
      */
     private void waitForAllClientsToCompleteSteps() throws InterruptedException {
         var haveAllCompletedSteps = false;
 
         while (!haveAllCompletedSteps) {
-            if (areAllConnectionThreadsAtSameStep() && this.serverData.isPersonTransactionEmpty())
+            if (areAllConnectionThreadsAtSameStep() && this.serverData.isPendingTransactionEmpty())
                 haveAllCompletedSteps = true;
             Thread.sleep(1);
         }
