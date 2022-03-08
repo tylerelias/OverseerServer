@@ -54,7 +54,7 @@ public class Server {
                 }
                 if (isSimulationCompleted()) {
                     tellAllClientsSimulationIsCompleted();
-                    logger.logSimulationCompleted(this.serverData.getCurrentStep().get());
+                    logger.logSimulationCompleted(this.serverData.getCurrentStep());
                     this.serverSocket.close();
                 }
                 Thread.sleep(1); // CPU usage was going through the roof, so busy-waiting it is
@@ -101,7 +101,7 @@ public class Server {
      * @return true of the simulation is finished, false if not
      */
     private boolean isSimulationCompleted() throws InterruptedException {
-        if(this.serverData.getCurrentStep().get() == this.serverData.getTotalSteps()) {
+        if(this.serverData.getCurrentStep() == this.serverData.getTotalSteps()) {
             if(!this.serverData.isPendingTransactionEmpty())
                 while (!this.serverData.isPendingTransactionEmpty()) { Thread.sleep(1); }
             return true;
@@ -113,10 +113,10 @@ public class Server {
      * Sends a message to all client to commence the next step
      */
     private void tellAllClientsToStep() {
-        logger.logTellAllClientsToStep(this.serverData.getCurrentStep().get());
+        logger.logTellAllClientsToStep(this.serverData.getCurrentStep());
         sendAllClientsObject(new Messages(
             Constants.PREFIX_NEXT_STEP
-            + (this.serverData.getCurrentStep().get()), this.serverId)
+            + (this.serverData.getCurrentStep()), this.serverId)
         );
     }
 
@@ -143,7 +143,7 @@ public class Server {
             return false;
 
         for (ConnectedSocket socket : this.serverData.getConnectedSockets().values()) {
-            if (socket.getCurrentStep() != this.serverData.getCurrentStep().get())
+            if (socket.getCurrentStep() != this.serverData.getCurrentStep())
                 return false;
         }
         return true;

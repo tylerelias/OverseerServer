@@ -79,7 +79,7 @@ public class ConnectionThread extends Thread {
                 handleBankInformationObject((BankInformation) object);
 
         } catch (IOException | InvalidKeyException e) {
-            System.out.printf("Overseer::serverConnection() - %s%n", e.getMessage());
+            System.err.printf("Overseer::serverConnection() - %s%n", e.getMessage());
             e.printStackTrace();
         }
     }
@@ -87,7 +87,7 @@ public class ConnectionThread extends Thread {
     /**
      * Very trying and fragile function, could need to looking into in the future. But here the BankInformation
      * object gets updated in the ServerData class, and it gets sent to the connected client
-     * @param bankInformation The incoming object with the BankIformation data
+     * @param bankInformation The incoming object with the BankInformation data
      */
     private void handleBankInformationObject(BankInformation bankInformation) {
         if(this.serverData.getReadyClients() == this.serverData.getConnectionLimit()) {
@@ -107,7 +107,9 @@ public class ConnectionThread extends Thread {
         this.hasSpawnedThreadneedleThread.set(true);
         new Thread(() -> {
             try {
-                readObject(this.threadneedleSocket);
+                while (this.serverData.getCurrentStep() != this.serverData.getTotalSteps()) {
+                    readObject(this.threadneedleSocket);
+                }
                 this.hasSpawnedThreadneedleThread.set(false);
             } catch (InvalidObjectException e) {
                 System.err.println("Thread spawn failure, likely because of a disconnected socket");
@@ -193,7 +195,7 @@ public class ConnectionThread extends Thread {
                     break;
                 }
                 else if(word.contains(Constants.PREFIX_CURRENT_STEP)) {
-                    setSteps(splitMessage);
+                    setSteps(word);
                     break;
                 }
                 else if(word.contains(Constants.PREFIX_TRANSACTION_DONE) && messages.getSender().equals(clientId)) {
@@ -301,26 +303,21 @@ public class ConnectionThread extends Thread {
      */
     private boolean validateSteps(Integer completedStep) {
         return  Objects.equals(this.serverData.getConnectedSockedStepByClientId(this.clientId),
-                this.serverData.getCurrentStep().get()) ||
-                completedStep == this.serverData.getCurrentStep().get();
+                this.serverData.getCurrentStep()) ||
+                completedStep == this.serverData.getCurrentStep();
     }
 
     /**
      * Parse and validate the step being passed in
-     * @param splitMessage
+     * @param word
      */
-    private void setSteps(String[] splitMessage)  {
-        for(var word : splitMessage) {
-            if (word.contains(Constants.PREFIX_CURRENT_STEP)) {
-                var completedStep = Integer.valueOf(word.split(Constants.COLON)[1]);
+    private void setSteps(String word)  {
+        var completedStep = Integer.valueOf(word.split(Constants.COLON)[1]);
 
-                if (validateSteps(completedStep))
-                    this.serverData.incrementStepOfConnectedSocketByClientId(this.clientId);
-                else
-                    logger.logStepMismatchError(completedStep, this.serverData.getCurrentStep().get(), this.clientId.toString());
-
-            }
-        }
+        if (validateSteps(completedStep))
+            this.serverData.incrementStepOfConnectedSocketByClientId(this.clientId);
+        else
+            logger.logStepMismatchError(completedStep, this.serverData.getCurrentStep(), this.clientId.toString());
     }
 
     /**

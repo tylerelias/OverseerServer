@@ -125,8 +125,8 @@ public class ServerData {
         return convertedClientIds.toString();
     }
 
-    public AtomicInteger getCurrentStep() {
-        return this.currentStep;
+    public int getCurrentStep() {
+        return this.currentStep.get();
     }
 
     public void incrementCurrentStep() {
