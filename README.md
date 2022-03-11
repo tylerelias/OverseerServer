@@ -33,12 +33,12 @@ Example argument to run would be:
 ### In progress
 
 - BankInformation object, trying to reduce the sending of it at the start (tricky, because you can't know for sure if the current list is the actually final list. Fischer's consensus problem and all that)
-- Revert failed transactions (Out of more than 100k steps of testing, it hasn't happened, but it should be a fallback mechanism in the event)
+- (**Implemented, needs testing**) Revert failed transactions (Out of more than 100k steps of testing, it hasn't happened, but it should be a fallback mechanism in the event)
 - Major changes to datastructures were done, all tested a generic simulation test, but they need more looking into for each line of code
 
 ### Bugs / Missing features
 
-- Currently, the Overseer stops at the final step *n*, but does not terminate all connections. Not a fatal bug, but an annoying one.
+- Threadneedle client throws exception when simulation stepping is done, this is because it is closing a socket that is reading. Look into how to fix (just gives ugly error, doesn't crash the program)
 - Add argument that enables debug output (more logs printed) and also argument that saves the log to a special log file
 - --help flag with info
 
