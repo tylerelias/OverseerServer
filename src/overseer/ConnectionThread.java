@@ -171,9 +171,7 @@ public class ConnectionThread extends Thread {
     }
 
     private boolean checkIfConnectionTerminated(String message) {
-        return !(message.equals(Constants.TERMINATE_CONNECTION) ||
-                message.equals(Constants.ABORT_CONNECTION) ||
-                message.equals(Constants.DISCONNECTED));
+        return !(message.equals(Constants.TERMINATE_CONNECTION));
     }
 
     /**

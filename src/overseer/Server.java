@@ -125,10 +125,8 @@ public class Server {
      */
     private void tellAllClientsSimulationIsCompleted() {
         sendAllClientsObject(new Messages(
-                Constants.PREFIX_SIMULATION +
                 Constants.COMMAND_SIMULATION_COMPLETED +
                 Constants.COMMAND_SPLITTER +
-                Constants.PREFIX_CONNECTION +
                 Constants.TERMINATE_CONNECTION
         , serverId));
         this.serverData.closeAllSockets();
