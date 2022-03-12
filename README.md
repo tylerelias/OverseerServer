@@ -16,9 +16,11 @@ The Overseer is responsible for guaranteeing the following:
 - The Overseer restricts all Threadneedle clients to step past its set Total Steps
 - Clients can make a deposit transaction to another connected client
 
-### Setup Steps
+### Starting the Overseer
 
-Coming soon, was always tested in an IDE.
+I made a `start.sh` script that creates the Java classes and runs the server. To run the script, it will require two arguments. An example would be:
+
+`sh start.sh -c 2 -s 100` where the connection limit is 2 and the total steps get set to 100. This is a Bash script, with Linux/Mac directory executions and therefor does not work on Windows. If your on Windows just run this in an IDE (Such as IntelliJ) and execute this server from there. Or use other means that you can come up with to run server.
 
 ### Program arguments
 
@@ -26,9 +28,6 @@ Coming soon, was always tested in an IDE.
 
 `-c [(int)CLIENT_CONNECTION_LIMIT]` - this command sets the limit of how many Threadneedle clients will be allowed to connect
 
-Example argument to run would be:
-
-`java -cp "overseer" Main -s 365 -c 2` (todo: check if this is the right way to run in terminal, spoiled by IDE)
 
 ### In progress
 
