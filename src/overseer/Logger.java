@@ -76,7 +76,7 @@ public class Logger {
     }
 
     public void logTellAllClientsToStep(Integer stepNumber) {
-        log(String.format("Server is sending all clients to commence step number %s", stepNumber));
+        log(String.format("Overseer: Sending all clients to commence step number %s", stepNumber));
     }
 
     public void logSimulationCompleted(Integer steps) {

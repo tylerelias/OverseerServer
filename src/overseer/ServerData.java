@@ -29,11 +29,13 @@ public class ServerData {
     // Stores information about all banks that the clients have in their simulation
     private final BankInformation bankInformationHashMap;
     private final AtomicBoolean hasSimulationStarted = new AtomicBoolean(false);
+    private boolean isDebugEnabled;
 
-    ServerData(Integer totalSteps, Integer connectionLimit, Integer portNumber) {
+    ServerData(Integer totalSteps, Integer connectionLimit, Integer portNumber, boolean isDebugEnabled) {
         this.totalSteps = totalSteps;
         this.connectionLimit = connectionLimit;
         this.portNumber = portNumber;
+        this.isDebugEnabled = isDebugEnabled;
         this.currentStep = new AtomicInteger(1);
         this.currentConnections = new AtomicInteger(0);
         this.connectedSockets = new ConcurrentHashMap<>();
@@ -62,7 +64,7 @@ public class ServerData {
     }
 
     public boolean checkIfAllClientsConnected() {
-        return !Objects.equals(getCurrentConnections().get(), getConnectionLimit());
+        return !Objects.equals(getCurrentConnections(), getConnectionLimit());
     }
 
     public void addConnectedSocket(Socket threadneedleSocket, UUID clientId) {
@@ -165,12 +167,12 @@ public class ServerData {
         return connectionLimit;
     }
 
-    public AtomicInteger getCurrentConnections() {
-        return currentConnections;
+    public Integer getCurrentConnections() {
+        return currentConnections.get();
     }
 
     public boolean haveAllClientsBeenInitialized() {
-        return this.getConnectionLimit() == this.getCurrentConnections().get() &&
+        return this.getConnectionLimit().equals(this.getCurrentConnections()) &&
                 this.getConnectionLimit() == this.getConnectedSockets().size() &&
                 this.getConnectionLimit() == this.getReadyClients();
     }
@@ -194,5 +196,13 @@ public class ServerData {
 
     public AccountTransaction getCompletedTransactionById(UUID transactionId) {
         return this.completedTransactions.get(transactionId);
+    }
+
+    public boolean isDebugEnabled() {
+        return isDebugEnabled;
+    }
+
+    public void setIsDebugEnabled(boolean value) {
+        this.isDebugEnabled = value;
     }
 }

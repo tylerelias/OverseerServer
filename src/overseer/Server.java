@@ -17,10 +17,14 @@ public class Server {
     private ServerData serverData; // where all the important server data is stored, sockets access it too
     private ServerSocket serverSocket;
     private UUID serverId;
+    private final Debug debug = new Debug();
 
     public void start(ServerData serverData) {
         this.serverData = serverData;
         this.serverId = UUID.randomUUID();
+
+        if(this.serverData.isDebugEnabled())
+            System.err.println("NOTE: Debug output is enabled! This will affect simulation speeds because of increased text output in console");
 
         try {
             this.serverSocket = new ServerSocket(this.serverData.getPortNumber());
@@ -37,7 +41,7 @@ public class Server {
                 // When the connection limit has been reached
                 else if (!isAtConnectionLimit) {
                     isAtConnectionLimit = true;
-                    logger.logConnectionLimitReached(this.serverData.getCurrentConnections().get());
+                    logger.logConnectionLimitReached(this.serverData.getCurrentConnections());
                 }
                 // Send all simulation required data to clients
                 if(!hasInitializedSimulation && this.serverData.haveAllClientsBeenInitialized())
@@ -124,6 +128,9 @@ public class Server {
      * Sends a message to all clients that the simulation as completed and terminate connection message as well
      */
     private void tellAllClientsSimulationIsCompleted() {
+        if(this.serverData.isDebugEnabled())
+            debug.serverTellAllClientsSimulationIsCompleted();
+
         sendAllClientsObject(new Messages(
                 Constants.COMMAND_SIMULATION_COMPLETED +
                 Constants.COMMAND_SPLITTER +
@@ -137,7 +144,7 @@ public class Server {
      * @return true if they have all reached the same step, false if not
      */
     private boolean areAllConnectionThreadsAtSameStep() {
-        if (this.serverData.getCurrentConnections().get() != this.serverData.getConnectionLimit())
+        if (this.serverData.getCurrentConnections() != this.serverData.getConnectionLimit())
             return false;
 
         for (ConnectedSocket socket : this.serverData.getConnectedSockets().values()) {
@@ -151,6 +158,9 @@ public class Server {
      * Accepts incoming Threadneedle connections and spawns a new ConnectionThread as a result
      */
     private void acceptConnections() {
+        if(this.serverData.isDebugEnabled())
+            debug.serverAcceptConnections(this.serverData.getCurrentConnections(), this.serverData.getConnectionLimit());
+
         try {
             var threadneedleSocket = this.serverSocket.accept();
             new ConnectionThread(threadneedleSocket, this.serverData).start();
@@ -165,6 +175,9 @@ public class Server {
      * @param object that is to be sent to all clients
      */
     private void sendAllClientsObject(Object object) {
+        if(this.serverData.isDebugEnabled())
+            debug.serverSendAllClientsObject(object);
+
         var connectedSockets = this.serverData.getConnectedSockets().values();
         connectedSockets.forEach(socket -> {
             try {

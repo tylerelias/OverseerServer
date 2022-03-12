@@ -11,6 +11,7 @@ public class Main {
         int stepNumber = 0;
         int connectionLimit = 0;
         int portNumber = 4242;
+        boolean isDebugEnabled = false;
         var logger = new Logger();
 
         if (args.length > 0) {
@@ -19,14 +20,16 @@ public class Main {
             //TODO: Make --help flag with info
             try {
                 for (var i = 0; i < argumentsList.size(); i++) {
-                    if (Objects.equals(argumentsList.get(i), Constants.FLAG_STEP_NUMBER))
+                    if (Objects.equals(argumentsList.get(i), Constants.ARG_STEP_NUMBER))
                         stepNumber = Integer.parseInt(argumentsList.get(i + 1));
 
-                    if (Objects.equals(argumentsList.get(i), Constants.FLAG_CONNECTION_NUMBER))
+                    if (Objects.equals(argumentsList.get(i), Constants.ARG_CONNECTION_NUMBER))
                         connectionLimit = Integer.parseInt(argumentsList.get(i + 1));
 
-                    if (Objects.equals(argumentsList.get(i), Constants.FLAG_PORT_NUMBER))
+                    if (Objects.equals(argumentsList.get(i), Constants.ARG_PORT_NUMBER))
                         portNumber = Integer.parseInt(argumentsList.get(i + 1));
+                    if(Objects.equals(argumentsList.get(i), Constants.ARG_DEBUG))
+                        isDebugEnabled = true;
                 }
             } catch (Exception e) {
                 logger.logInvalidArgumentError();
@@ -42,7 +45,7 @@ public class Main {
             // needs to be final because of the new Thread() call, don't want the data to change...
             Integer finalStepNumber = stepNumber;
             Integer finalConnectionLimit = connectionLimit;
-            serverData = new ServerData(finalStepNumber, finalConnectionLimit, portNumber);
+            serverData = new ServerData(finalStepNumber, finalConnectionLimit, portNumber, isDebugEnabled);
 
             var serverThread = new Thread(() -> {
                 var server = new Server();

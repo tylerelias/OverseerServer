@@ -21,6 +21,7 @@ public class ConnectionThread extends Thread {
     private boolean isConnected = true;
     private final AtomicBoolean hasSpawnedThreadneedleThread = new AtomicBoolean(false);
     private boolean isConnectionIdSet;
+    private final Debug debug = new Debug();
 
     public ConnectionThread(Socket threadneedleSocket, ServerData serverData) throws IOException {
         this.threadneedleSocket = threadneedleSocket;
@@ -34,6 +35,9 @@ public class ConnectionThread extends Thread {
      */
     public void run() {
         // start off by sending the total step to the Threadneedle client
+        if(this.serverData.isDebugEnabled())
+            debug.connectionThreadRun(this.clientId, this.serverData.getTotalSteps());
+
         writeObject(new Messages(Constants.PREFIX_TOTAL_STEPS + this.serverData.getTotalSteps(), this.clientId));
 
         try {
@@ -59,6 +63,9 @@ public class ConnectionThread extends Thread {
                 var object = client.getFromMessageQueue();
                 processObject(object);
                 client.removeFromMessageQueue(object);
+
+                if(this.serverData.isDebugEnabled())
+                    debug.connectionThreadCheckMessageQueue(this.clientId, object);
             }
         }
     }
@@ -68,6 +75,8 @@ public class ConnectionThread extends Thread {
      * @param object The object that is being passed in
      */
     private synchronized void processObject(Object object) {
+        if(this.serverData.isDebugEnabled())
+            debug.connectionThreadProcessObject(this.clientId, object);
         try {
             if(object.getClass() == Messages.class)
                 readMessageObject((Messages) object);
@@ -146,6 +155,9 @@ public class ConnectionThread extends Thread {
      * @param accountTransaction transaction details
      */
     private void processAccountTransaction(AccountTransaction accountTransaction) {
+        if(this.serverData.isDebugEnabled())
+            debug.connectionThreadProcessAccountTransaction(this.clientId, accountTransaction);
+
         this.serverData.addToPendingTransactions((accountTransaction));
 
         if(this.clientId.equals(accountTransaction.getClientIdTo())) {
@@ -180,6 +192,9 @@ public class ConnectionThread extends Thread {
      * @param messages the incoming message that is being parsed
      */
     private void readMessageObject(Messages messages) throws IOException, InvalidKeyException {
+        if (this.serverData.isDebugEnabled())
+            debug.connectionThreadReadMessageObject(this.clientId, messages);
+
         var splitMessage = messages.getMessage().split(Constants.COMMAND_SPLITTER);
 
         for (var word : splitMessage) {

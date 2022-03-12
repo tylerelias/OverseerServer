@@ -2,9 +2,10 @@ package overseer;
 
 public class Constants {
     // Program arguments
-    static final String FLAG_CONNECTION_NUMBER = "-c";
-    static final String FLAG_STEP_NUMBER = "-s";
-    static final String FLAG_PORT_NUMBER = "-p";
+    static final String ARG_CONNECTION_NUMBER = "-c";
+    static final String ARG_STEP_NUMBER = "-s";
+    static final String ARG_PORT_NUMBER = "-p";
+    static final String ARG_DEBUG = "-d";
     // log related
     static final String ERROR_STEP_MISMATCH = "Step mismatch";
     static final String EXCEPTION_THROWN = "Exception";
