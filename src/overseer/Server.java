@@ -1,6 +1,8 @@
 package overseer;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
 import java.util.UUID;
@@ -51,21 +53,43 @@ public class Server {
                     this.serverData.setHasSimulationStarted(true); // client sockets use this in ConnectionThread
                 }
                 // Now simulation can begin
-                if (hasInitializedSimulation && isAtConnectionLimit && validateSteppingConditions()) {
-                    incrementCurrentServerStep();
-                    tellAllClientsToStep();
-                    waitForAllClientsToCompleteSteps();
-                }
-                if (isSimulationCompleted()) {
-                    tellAllClientsSimulationIsCompleted();
-                    logger.logSimulationCompleted(this.serverData.getCurrentStep());
-                    this.serverSocket.close();
+                if (hasInitializedSimulation && isAtConnectionLimit) {
+                    if(this.serverData.getTotalSteps() == this.serverData.getCurrentStep())
+                        readStepInputFromCommandLine();
+
+                    if(validateSteppingConditions()) {
+                        incrementCurrentServerStep();
+                        tellAllClientsToStep();
+                        waitForAllClientsToCompleteSteps();
+                    }
                 }
                 Thread.sleep(1); // CPU usage was going through the roof, so busy-waiting it is
             }
         } catch (Exception e) {
             logger.logServerError(e);
         }
+    }
+
+    private void readStepInputFromCommandLine() throws IOException {
+        while(true) {
+            System.out.println("======================================================================");
+            System.out.println("> Set the number of steps you want the clients to take and hit (Enter)");
+            var input = new BufferedReader(new InputStreamReader(System.in)).readLine();
+            if(input != null) {
+                boolean isNumeric = input.chars().allMatch(Character::isDigit);
+                if(isNumeric && Integer.parseInt(input) > 0) {
+                    var value = Integer.parseInt(input);
+                    commandClientsToTakeStep(value);
+                    this.serverData.setTotalSteps(value);
+                    break;
+                }
+            }
+            System.out.println("Invalid input. Only positive numbers are accepted");
+        }
+    }
+
+    private void commandClientsToTakeStep(int stepAmount) {
+        sendAllClientsObject(new Messages(Constants.PREFIX_TAKE_STEP + stepAmount, this.serverId));
     }
 
     /**
@@ -144,7 +168,7 @@ public class Server {
      * @return true if they have all reached the same step, false if not
      */
     private boolean areAllConnectionThreadsAtSameStep() {
-        if (this.serverData.getCurrentConnections() != this.serverData.getConnectionLimit())
+        if (!this.serverData.getCurrentConnections().equals(this.serverData.getConnectionLimit()))
             return false;
 
         for (ConnectedSocket socket : this.serverData.getConnectedSockets().values()) {

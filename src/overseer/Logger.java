@@ -55,15 +55,13 @@ public class Logger {
         log(String.format("Message: %s - %s", message, threadName));
     }
 
-    public void logArguments(int stepNumber, int connectionLimit) {
-        log(String.format("Argument - Total Steps: %s", stepNumber));
+    public void logArguments(int connectionLimit) {
         log(String.format("Argument - Connection limit: %s", connectionLimit));
     }
 
-    public void logIncorrectArgumentsError(int stepNumber, int connectionLimit) {
+    public void logIncorrectArgumentsError(int connectionLimit) {
         logError(
-                String.format("Arguments are not in the correct format: Connection limit: %s, Step number: %s",
-                        connectionLimit, stepNumber),
+                String.format("Arguments are not in the correct format: Connection limit: %s", connectionLimit),
                 Constants.ARGUMENT_WARNING);
     }
 

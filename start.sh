@@ -2,15 +2,19 @@
 CLASSPATH="src/"
 TOTAL_STEPS=0
 CONNECTION_LIMIT=0
+DEBUG=""
 
-while getopts "c:s:" OPTION
+while getopts "c:s:d" OPTION
 do 
    case $OPTION in
-       c)
+      c)
          CONNECTION_LIMIT=$OPTARG
          ;;
-       s)
+      s)
          TOTAL_STEPS=$OPTARG
+         ;;
+      d)
+         DEBUG="-d"
          ;;
        ?)
          echo "ERROR: Unknown argument(s)"
@@ -30,5 +34,5 @@ mkdir out
 mkdir out/overseer
 mv src/overseer/*.class out/overseer/
 cd out
-java -cp . overseer/Main -s $TOTAL_STEPS -c $CONNECTION_LIMIT
+java -cp . overseer/Main -s $TOTAL_STEPS -c $CONNECTION_LIMIT $DEBUG
 

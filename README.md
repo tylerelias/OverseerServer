@@ -24,15 +24,19 @@ Non IDE way:
 
 I made a `start.sh` script that creates the Java classes and runs the server. To run the script, it will require two arguments. An example would be:
 
-`sh start.sh -c 2 -s 100` where the connection limit is 2 and the total steps get set to 100. This is a Bash script, with Linux/Mac directory executions and therefor does not work on Windows. If your on Windows just run this in an IDE (Such as IntelliJ) and execute this server from there. Or use other means that you can come up with to run server.
+`sh start.sh -c 2` where the connection limit is 2 and the total steps get set to 100. This is a Bash script, with Linux/Mac directory executions and therefor does not work on Windows. If your on Windows just run this in an IDE (Such as IntelliJ) and execute this server from there. Or use other means that you can come up with to run server.
+
+## Making all Threadneedle clients step
+
+You will be asked to insert the amount of steps that you want all clients to take once all clients have connected. 
+Just insert a positive number and hit Enter.
+You can also make the Threadneedle clients step more once they have completed the steps you instructed them to take before.
 
 ### Program arguments
 
-`-s [(int)NUMBER_OF_STEPS_HERE]` - this command sets the number of steps that all Threadneedle clients will be taking in the simulation
-
 `-c [(int)CLIENT_CONNECTION_LIMIT]` - this command sets the limit of how many Threadneedle clients will be allowed to connect
 
-
+`-d` - this command makes the server print a lot of information, also tends to make the step input buggy
 ### In progress
 
 - BankInformation object, trying to reduce the sending of it at the start (tricky, because you can't know for sure if the current list is the actually final list. Fischer's consensus problem and all that)

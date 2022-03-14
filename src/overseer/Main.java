@@ -8,7 +8,6 @@ public class Main {
 
     public static void main(String[] args) {
         ServerData serverData;
-        int stepNumber = 0;
         int connectionLimit = 0;
         int portNumber = 4242;
         boolean isDebugEnabled = false;
@@ -20,9 +19,6 @@ public class Main {
             //TODO: Make --help flag with info
             try {
                 for (var i = 0; i < argumentsList.size(); i++) {
-                    if (Objects.equals(argumentsList.get(i), Constants.ARG_STEP_NUMBER))
-                        stepNumber = Integer.parseInt(argumentsList.get(i + 1));
-
                     if (Objects.equals(argumentsList.get(i), Constants.ARG_CONNECTION_NUMBER))
                         connectionLimit = Integer.parseInt(argumentsList.get(i + 1));
 
@@ -36,16 +32,15 @@ public class Main {
                 System.exit(0);
             }
 
-            if(connectionLimit <= 0 || stepNumber < 1) {
-                logger.logIncorrectArgumentsError(stepNumber, connectionLimit);
+            if(connectionLimit <= 0) {
+                logger.logIncorrectArgumentsError(connectionLimit);
                 System.exit(0);
             }
 
-            logger.logArguments(stepNumber, connectionLimit);
+            logger.logArguments(connectionLimit);
             // needs to be final because of the new Thread() call, don't want the data to change...
-            Integer finalStepNumber = stepNumber;
             Integer finalConnectionLimit = connectionLimit;
-            serverData = new ServerData(finalStepNumber, finalConnectionLimit, portNumber, isDebugEnabled);
+            serverData = new ServerData(finalConnectionLimit, portNumber, isDebugEnabled);
 
             var serverThread = new Thread(() -> {
                 var server = new Server();

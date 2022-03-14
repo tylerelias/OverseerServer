@@ -34,12 +34,6 @@ public class ConnectionThread extends Thread {
      * Socket will keep reading/writing messages as long as the connection to the server is alive
      */
     public void run() {
-        // start off by sending the total step to the Threadneedle client
-        if(this.serverData.isDebugEnabled())
-            debug.connectionThreadRun(this.clientId, this.serverData.getTotalSteps());
-
-        writeObject(new Messages(Constants.PREFIX_TOTAL_STEPS + this.serverData.getTotalSteps(), this.clientId));
-
         try {
             while (isConnected && !this.threadneedleSocket.isClosed()) {
                 checkMessageQueue();
@@ -116,9 +110,7 @@ public class ConnectionThread extends Thread {
         this.hasSpawnedThreadneedleThread.set(true);
         new Thread(() -> {
             try {
-                while (this.serverData.getCurrentStep() != this.serverData.getTotalSteps()) {
-                    readObject(this.threadneedleSocket);
-                }
+                readObject(this.threadneedleSocket);
                 this.hasSpawnedThreadneedleThread.set(false);
             } catch (InvalidObjectException e) {
                 System.err.println("Thread spawn failure, likely because of a disconnected socket");
@@ -207,6 +199,10 @@ public class ConnectionThread extends Thread {
                     writeObject(messages);
                     break;
                 }
+                if (word.contains(Constants.PREFIX_TAKE_STEP)) {
+                    writeObject(messages);
+                    break;
+                }
                 else if(word.contains(Constants.PREFIX_CURRENT_STEP)) {
                     setSteps(word);
                     break;
@@ -252,8 +248,6 @@ public class ConnectionThread extends Thread {
                     this.isConnected = checkIfConnectionTerminated(word);
             }
         }
-//        if(this.clientId != null)
-//            logger.logSocketMessage(messages.getMessage(), clientId.toString());
     }
 
     private void letSenderKnowTransactionIsDone(UUID transactionId) {

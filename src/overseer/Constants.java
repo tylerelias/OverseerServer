@@ -3,7 +3,6 @@ package overseer;
 public class Constants {
     // Program arguments
     static final String ARG_CONNECTION_NUMBER = "-c";
-    static final String ARG_STEP_NUMBER = "-s";
     static final String ARG_PORT_NUMBER = "-p";
     static final String ARG_DEBUG = "-d";
     // log related
@@ -18,13 +17,13 @@ public class Constants {
     public static final String PREFIX_SERVER_ID = "ServerID:";      // The ID of the server is sent with this prefix
     public static final String PREFIX_SET_CLIENT_ID = "SetClientID:";// The Client ID gets set when Threadneedle sends this prefix to Overseer
     public static final String PREFIX_RECEIVED_CLIENT_ID = "ReceivedClientID:"; // Sends all connected Client ID's to connected clients
-    public static final String PREFIX_TOTAL_STEPS = "TotalSteps:";  // sends the Total Steps that Overseer has set, to all clients
     public static final String PREFIX_TRANSACTION_ID = "TransactionId:"; // the bank transaction ID's get sent with the prefix
     public static final String PREFIX_TRANSACTION_DONE = "TransactionDone:"; // confirmation from Client when transaction is done
     public static final String PREFIX_TRANSACTION_FAILED = "TransactionFailed:"; // failed transaction
     public static final String PREFIX_REVERT_TRANSACTION = "RevertTransaction:"; // transaction reverting successful
     // Send this msg + Client ID to Overseer when the client is ready
     public static final String PREFIX_CLIENT_READY = "ClientReady:";     // sent when client has loaded all their configs & settings
+    public static final String PREFIX_TAKE_STEP = "TakeStep:";     // sent when client has loaded all their configs & settings
     // Command related
     public static final String COMMAND_ALL_CLIENTS_CONNECTED = "all_clients_connected:"; //sent from Overseer, to clients that all clients have connected
     public static final String COMMAND_SIMULATION_COMPLETED = "simulation_completed";   // sent from Overseer, to client that simulation is completed

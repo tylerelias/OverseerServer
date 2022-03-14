@@ -12,14 +12,15 @@ import java.util.concurrent.atomic.AtomicInteger;
     and sockets will need to access and modify while the simulation is running.
  */
 public class ServerData {
-    private final Integer totalSteps;                  // total steps that the simulation will take
-    private final AtomicInteger currentStep;                // the current step in the simulation
+    private final Integer portNumber;                 // the port number of the server itself
+    private AtomicInteger totalSteps;                       // total steps that the simulation will take
     private final Integer connectionLimit;            // connection limit set by the Overseer
-    private final AtomicInteger currentConnections;         // current amount of connected sockets
+    private final AtomicInteger currentStep;          // the current step in the simulation
+    private final AtomicInteger currentConnections;   // current amount of connected sockets
     // when a client has loaded its configurations and env. it will send a "ClientReady:ClientID" to the server
-    private final AtomicInteger readyClients;
-    private final Integer portNumber;                   // the port number of the server itself
-    private final Logger logger = new Logger(); // to log stuff that goes down
+    private final AtomicInteger readyClients;         // the clients that are ready to start simulating
+    private final AtomicBoolean hasSimulationStarted = new AtomicBoolean(false);
+    private final Logger logger = new Logger();       // to log stuff that goes down
     // the sockets (threadneedle programs) that are connected, along with important information about them
     private final ConcurrentHashMap<UUID, ConnectedSocket> connectedSockets;
     // keeps track of the pending transactions that are taking place between clients
@@ -28,15 +29,14 @@ public class ServerData {
     private final ConcurrentHashMap<UUID, AccountTransaction> completedTransactions;
     // Stores information about all banks that the clients have in their simulation
     private final BankInformation bankInformationHashMap;
-    private final AtomicBoolean hasSimulationStarted = new AtomicBoolean(false);
     private boolean isDebugEnabled;
 
-    ServerData(Integer totalSteps, Integer connectionLimit, Integer portNumber, boolean isDebugEnabled) {
-        this.totalSteps = totalSteps;
+    ServerData(Integer connectionLimit, Integer portNumber, boolean isDebugEnabled) {
         this.connectionLimit = connectionLimit;
         this.portNumber = portNumber;
         this.isDebugEnabled = isDebugEnabled;
         this.currentStep = new AtomicInteger(1);
+        this.totalSteps = new AtomicInteger(1);
         this.currentConnections = new AtomicInteger(0);
         this.connectedSockets = new ConcurrentHashMap<>();
         this.pendingTransactions = new ConcurrentHashMap<>();
@@ -160,7 +160,7 @@ public class ServerData {
     }
 
     public Integer getTotalSteps() {
-        return totalSteps;
+        return totalSteps.get();
     }
 
     public Integer getConnectionLimit() {
@@ -204,5 +204,9 @@ public class ServerData {
 
     public void setIsDebugEnabled(boolean value) {
         this.isDebugEnabled = value;
+    }
+
+    public void setTotalSteps(int value) {
+        this.totalSteps.set(this.totalSteps.get() + value);
     }
 }
