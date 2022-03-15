@@ -24,7 +24,7 @@ Non IDE way:
 
 I made a `start.sh` script that creates the Java classes and runs the server. To run the script, it will require two arguments. An example would be:
 
-`sh start.sh -c 2` where the connection limit is 2 and the total steps get set to 100. This is a Bash script, with Linux/Mac directory executions and therefor does not work on Windows. If your on Windows just run this in an IDE (Such as IntelliJ) and execute this server from there. Or use other means that you can come up with to run server.
+`sh start.sh -c 2` where the connection limit is 2. This is a Bash script, with Linux/Mac directory executions and therefor does not work on Windows. If your on Windows just run this in an IDE (Such as IntelliJ) and execute this server from there. Or use other means that you can come up with to run server.
 
 ## Making all Threadneedle clients step
 
@@ -45,8 +45,7 @@ You can also make the Threadneedle clients step more once they have completed th
 
 ### Bugs / Missing features
 
-- Threadneedle client throws exception when simulation stepping is done, this is because it is closing a socket that is reading. Look into how to fix (just gives ugly error, doesn't crash the program)
-- Add argument that enables debug output (more logs printed) and also argument that saves the log to a special log file
+- Add argument that saves the log to a special log file
 - --help flag with info
 
 Notice: There has no work done on security for this server since it will be communicating with clients within a closed local environment. **Do not run it on an open network**. 
