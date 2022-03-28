@@ -7,11 +7,13 @@ public class AccountInformation implements Serializable {
     private String ownerId;
     private Integer accountId;
     private Integer bankId;
+    private long currentBalance;
 
-    public AccountInformation(String ownerId, Integer accountId, Integer bankId) {
+    public AccountInformation(String ownerId, Integer accountId, Integer bankId, long currentBalance) {
         this.ownerId = ownerId;
         this.accountId = accountId;
         this.bankId = bankId;
+        this.currentBalance = currentBalance;
     }
 
     public Integer getBankId() {
@@ -36,5 +38,13 @@ public class AccountInformation implements Serializable {
 
     public void setAccountId(Integer accountId) {
         this.accountId = accountId;
+    }
+
+    public long getCurrentBalance() {
+        return currentBalance;
+    }
+
+    public long setCurrentBalance(long amount) {
+        return this.currentBalance = amount;
     }
 }

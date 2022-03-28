@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ServerData {
     private final Integer portNumber;                 // the port number of the server itself
-    private AtomicInteger totalSteps;                       // total steps that the simulation will take
+    private final AtomicInteger totalSteps;                       // total steps that the simulation will take
     private final Integer connectionLimit;            // connection limit set by the Overseer
     private final AtomicInteger currentStep;          // the current step in the simulation
     private final AtomicInteger currentConnections;   // current amount of connected sockets
@@ -27,6 +27,8 @@ public class ServerData {
     private final ConcurrentHashMap<UUID, AccountTransaction> pendingTransactions;
     // the finished transactions of the simulation
     private final ConcurrentHashMap<UUID, AccountTransaction> completedTransactions;
+    private final ConcurrentHashMap<UUID, TouristTransaction> pendingTouristTransactions;
+    private final ConcurrentHashMap<UUID, TouristTransaction> completedTouristTransactions;
     // Stores information about all banks that the clients have in their simulation
     private final BankInformation bankInformationHashMap;
     private boolean isDebugEnabled;
@@ -41,6 +43,8 @@ public class ServerData {
         this.connectedSockets = new ConcurrentHashMap<>();
         this.pendingTransactions = new ConcurrentHashMap<>();
         this.completedTransactions = new ConcurrentHashMap<>();
+        this.pendingTouristTransactions = new ConcurrentHashMap<>();
+        this.completedTouristTransactions = new ConcurrentHashMap<>();
         this.bankInformationHashMap = new BankInformation();
         this.readyClients = new AtomicInteger(0);
     }
@@ -196,6 +200,20 @@ public class ServerData {
 
     public AccountTransaction getCompletedTransactionById(UUID transactionId) {
         return this.completedTransactions.get(transactionId);
+    }
+
+    public void addCompletedTouristTransaction(TouristTransaction touristTransaction) {
+        this.completedTouristTransactions.put(touristTransaction.getTransactionId(), touristTransaction);
+    }
+
+    public void addPendingTouristTransaction(TouristTransaction touristTransaction) {
+        this.pendingTouristTransactions.put(touristTransaction.getTransactionId(), touristTransaction);
+    }
+
+    public TouristTransaction getAndRemovePendingTouristTransaction(UUID transactionId) {
+        var transaction = this.pendingTouristTransactions.get(transactionId);
+        this.pendingTouristTransactions.remove(transactionId);
+        return transaction;
     }
 
     public boolean isDebugEnabled() {

@@ -81,10 +81,23 @@ public class ConnectionThread extends Thread {
             else if(object.getClass() == BankInformation.class)
                 handleBankInformationObject((BankInformation) object);
 
+            else if(object.getClass() == TouristTransaction.class)
+                processTouristTransaction((TouristTransaction) object);
+
         } catch (IOException | InvalidKeyException e) {
             System.err.printf("Overseer::serverConnection() - %s%n", e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void processTouristTransaction(TouristTransaction touristTransaction) {
+        if(touristTransaction.getClientId().equals(this.clientId)) {
+            this.serverData.addPendingTouristTransaction(touristTransaction);
+            writeObject(touristTransaction);
+        }
+        else this.serverData
+                    .getConnectedSocketByClientId(touristTransaction.getClientId())
+                    .addToMessageQueue(touristTransaction);
     }
 
     /**
@@ -175,7 +188,7 @@ public class ConnectionThread extends Thread {
     }
 
     private boolean checkIfConnectionTerminated(String message) {
-        return !(message.equals(Constants.TERMINATE_CONNECTION));
+        return !(message.equals(Constant.TERMINATE_CONNECTION));
     }
 
     /**
@@ -187,7 +200,7 @@ public class ConnectionThread extends Thread {
         if (this.serverData.isDebugEnabled())
             debug.connectionThreadReadMessageObject(this.clientId, messages);
 
-        var splitMessage = messages.getMessage().split(Constants.COMMAND_SPLITTER);
+        var splitMessage = messages.getMessage().split(Constant.COMMAND_SPLITTER);
 
         for (var word : splitMessage) {
             if (!isValidClientId()) {
@@ -195,54 +208,58 @@ public class ConnectionThread extends Thread {
                 if (this.isConnectionIdSet) break;
             }
             else {
-                if (word.contains(Constants.PREFIX_NEXT_STEP)) {
+                if (word.contains(Constant.PREFIX_NEXT_STEP)) {
                     writeObject(messages);
                     break;
                 }
-                if (word.contains(Constants.PREFIX_TAKE_STEP)) {
+                if (word.contains(Constant.PREFIX_TAKE_STEP)) {
                     writeObject(messages);
                     break;
                 }
-                else if(word.contains(Constants.PREFIX_CURRENT_STEP)) {
+                else if(word.contains(Constant.PREFIX_CURRENT_STEP)) {
                     setSteps(word);
                     break;
                 }
-                else if(word.contains(Constants.PREFIX_TRANSACTION_DONE) && messages.getSender().equals(clientId)) {
-                    UUID transactionId = UUID.fromString(word.split(Constants.COLON)[1]);
+                else if(word.contains(Constant.PREFIX_TRANSACTION_DONE) && messages.getSender().equals(clientId)) {
+                    UUID transactionId = UUID.fromString(word.split(Constant.COLON)[1]);
                     letSenderKnowTransactionIsDone(transactionId);
                     this.serverData.addCompletedTransaction(transactionId);
                     this.serverData.removePendingTransaction(transactionId);
                     break;
                 }
-                else if(word.contains(Constants.PREFIX_TRANSACTION_DONE) && !messages.getSender().equals(clientId)) {
+                else if(word.contains(Constant.PREFIX_TOURIST_TRANSACTION_DONE)) {
+                    var touristTransaction = this.serverData.getAndRemovePendingTouristTransaction(UUID.fromString(word.split(Constant.COLON)[1]));
+                    this.serverData.addCompletedTouristTransaction(touristTransaction);
+                }
+                else if(word.contains(Constant.PREFIX_TRANSACTION_DONE) && !messages.getSender().equals(clientId)) {
                     writeObject(messages);
                     break;
                 }
-                else if(word.contains(Constants.PREFIX_REVERT_TRANSACTION)) {
-                    UUID transactionId = UUID.fromString(word.split(Constants.COLON)[1]);
+                else if(word.contains(Constant.PREFIX_REVERT_TRANSACTION)) {
+                    UUID transactionId = UUID.fromString(word.split(Constant.COLON)[1]);
                     letSenderKnowTransactionIsDone(transactionId);
                     this.serverData.addCompletedTransaction(transactionId);
                     this.serverData.removePendingTransaction(transactionId);
                     break;
                 }
-                else if (word.contains(Constants.PREFIX_TRANSACTION_FAILED)) {
+                else if (word.contains(Constant.PREFIX_TRANSACTION_FAILED)) {
                     revertIncompleteTransfer(splitMessage);
                     break;
                 }
-                else if(word.contains(Constants.COMMAND_ALL_CLIENTS_CONNECTED)) {
+                else if(word.contains(Constant.COMMAND_ALL_CLIENTS_CONNECTED)) {
                     writeObject(messages);
                     break;
                 }
-                else if(word.contains(Constants.PREFIX_SERVER_ID)) {
+                else if(word.contains(Constant.PREFIX_SERVER_ID)) {
                     writeObject(messages);
                     break;
                 }
-                else if(word.contains(Constants.COMMAND_SIMULATION_COMPLETED)) {
+                else if(word.contains(Constant.COMMAND_SIMULATION_COMPLETED)) {
                     writeObject(messages);
                     break;
                 }
                 //todo: very prone if same client sends 2x, fix
-                else if(word.contains(Constants.PREFIX_CLIENT_READY))
+                else if(word.contains(Constant.PREFIX_CLIENT_READY))
                     this.serverData.incrementReadyClients();
                 else
                     this.isConnected = checkIfConnectionTerminated(word);
@@ -253,7 +270,7 @@ public class ConnectionThread extends Thread {
     private void letSenderKnowTransactionIsDone(UUID transactionId) {
         var pendingTransfer = this.serverData.getPendingTransactionById(transactionId);
         addToClientMessageQueue(pendingTransfer.getClientIdFrom(),
-                new Messages(Constants.PREFIX_TRANSACTION_DONE + transactionId, this.clientId));
+                new Messages(Constant.PREFIX_TRANSACTION_DONE + transactionId, this.clientId));
     }
 
     /**
@@ -264,14 +281,14 @@ public class ConnectionThread extends Thread {
     private void revertIncompleteTransfer(String[] splitMessage) throws InvalidKeyException {
         UUID transactionId = null;
         for(var word : splitMessage) {
-            if(word.contains(Constants.PREFIX_TRANSACTION_ID))
-                transactionId = UUID.fromString(word.split(Constants.COLON)[1]);
+            if(word.contains(Constant.PREFIX_TRANSACTION_ID))
+                transactionId = UUID.fromString(word.split(Constant.COLON)[1]);
         }
         if(transactionId == null) throw new InvalidKeyException("Transaction ID not found");
 
         AccountTransaction accountTransaction = this.serverData.getPendingTransactionById(transactionId);
         addToClientMessageQueue(accountTransaction.getClientIdFrom(), new Messages(
-                Constants.PREFIX_REVERT_TRANSACTION + transactionId, this.clientId
+                Constant.PREFIX_REVERT_TRANSACTION + transactionId, this.clientId
         ));
     }
 
@@ -319,7 +336,7 @@ public class ConnectionThread extends Thread {
      * @param word
      */
     private void setSteps(String word)  {
-        var completedStep = Integer.valueOf(word.split(Constants.COLON)[1]);
+        var completedStep = Integer.valueOf(word.split(Constant.COLON)[1]);
 
         if (validateSteps(completedStep))
             this.serverData.incrementStepOfConnectedSocketByClientId(this.clientId);
@@ -333,8 +350,8 @@ public class ConnectionThread extends Thread {
      * @return
      */
     private boolean checkForConnectionId(String word) {
-        if (word.contains(Constants.PREFIX_SET_CLIENT_ID)) {
-            UUID clientId = UUID.fromString(word.split(Constants.COLON)[1]);
+        if (word.contains(Constant.PREFIX_SET_CLIENT_ID)) {
+            UUID clientId = UUID.fromString(word.split(Constant.COLON)[1]);
             setClientId(clientId);
             this.serverData.addConnectedSocket(this.threadneedleSocket, this.clientId);
             return true;

@@ -38,12 +38,12 @@ public class Logger {
     public void logStepMismatchError(Integer clientSteps, Integer serverSteps, String clientConnectionId) {
         String errorMessage = String.format("Client: %s, Server: %s, ClientId: %s",
                 clientSteps, serverSteps, clientConnectionId);
-        logError(errorMessage, Constants.ERROR_STEP_MISMATCH);
+        logError(errorMessage, Constant.ERROR_STEP_MISMATCH);
     }
 
     public void logConnectionThreadExceptionError(Exception e) {
         logError(String.format("In ConnectionThread: %s", e.getMessage()),
-                Constants.EXCEPTION_THROWN);
+                Constant.EXCEPTION_THROWN);
 //        e.printStackTrace();
     }
 
@@ -62,7 +62,7 @@ public class Logger {
     public void logIncorrectArgumentsError(int connectionLimit) {
         logError(
                 String.format("Arguments are not in the correct format: Connection limit: %s", connectionLimit),
-                Constants.ARGUMENT_WARNING);
+                Constant.ARGUMENT_WARNING);
     }
 
     public void logConnectionLimitReached(Integer connectionLimit) {

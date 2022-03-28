@@ -1,6 +1,6 @@
 package overseer;
 
-public class Constants {
+public class Constant {
     // Program arguments
     static final String ARG_CONNECTION_NUMBER = "-c";
     static final String ARG_PORT_NUMBER = "-p";
@@ -19,6 +19,7 @@ public class Constants {
     public static final String PREFIX_RECEIVED_CLIENT_ID = "ReceivedClientID:"; // Sends all connected Client ID's to connected clients
     public static final String PREFIX_TRANSACTION_ID = "TransactionId:"; // the bank transaction ID's get sent with the prefix
     public static final String PREFIX_TRANSACTION_DONE = "TransactionDone:"; // confirmation from Client when transaction is done
+    public static final String PREFIX_TOURIST_TRANSACTION_DONE = "TouristTransactionDone:"; // confirmation from Client when Tourist transaction is done
     public static final String PREFIX_TRANSACTION_FAILED = "TransactionFailed:"; // failed transaction
     public static final String PREFIX_REVERT_TRANSACTION = "RevertTransaction:"; // transaction reverting successful
     // Send this msg + Client ID to Overseer when the client is ready

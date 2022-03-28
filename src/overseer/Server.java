@@ -89,7 +89,7 @@ public class Server {
     }
 
     private void commandClientsToTakeStep(int stepAmount) {
-        sendAllClientsObject(new Messages(Constants.PREFIX_TAKE_STEP + stepAmount, this.serverId));
+        sendAllClientsObject(new Messages(Constant.PREFIX_TAKE_STEP + stepAmount, this.serverId));
     }
 
     /**
@@ -98,8 +98,8 @@ public class Server {
      */
     private void sendClientsSimulationInformation() {
         var clientIds = this.serverData.convertConnectedClientIdToUUID();
-        sendAllClientsObject(new Messages(Constants.PREFIX_SERVER_ID + this.serverId, this.serverId));
-        sendAllClientsObject(new Messages(Constants.COMMAND_ALL_CLIENTS_CONNECTED + clientIds, serverId));
+        sendAllClientsObject(new Messages(Constant.PREFIX_SERVER_ID + this.serverId, this.serverId));
+        sendAllClientsObject(new Messages(Constant.COMMAND_ALL_CLIENTS_CONNECTED + clientIds, serverId));
         sendAllClientsObject(this.serverData.getBankInformationHashMap());
     }
 
@@ -143,7 +143,7 @@ public class Server {
     private void tellAllClientsToStep() {
         logger.logTellAllClientsToStep(this.serverData.getCurrentStep());
         sendAllClientsObject(new Messages(
-            Constants.PREFIX_NEXT_STEP
+            Constant.PREFIX_NEXT_STEP
             + (this.serverData.getCurrentStep()), this.serverId)
         );
     }
@@ -156,9 +156,9 @@ public class Server {
             debug.serverTellAllClientsSimulationIsCompleted();
 
         sendAllClientsObject(new Messages(
-                Constants.COMMAND_SIMULATION_COMPLETED +
-                Constants.COMMAND_SPLITTER +
-                Constants.TERMINATE_CONNECTION
+                Constant.COMMAND_SIMULATION_COMPLETED +
+                Constant.COMMAND_SPLITTER +
+                Constant.TERMINATE_CONNECTION
         , serverId));
         this.serverData.closeAllSockets();
     }

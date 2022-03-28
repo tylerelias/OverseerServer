@@ -19,12 +19,12 @@ public class Main {
             //TODO: Make --help flag with info
             try {
                 for (var i = 0; i < argumentsList.size(); i++) {
-                    if (Objects.equals(argumentsList.get(i), Constants.ARG_CONNECTION_NUMBER))
+                    if (Objects.equals(argumentsList.get(i), Constant.ARG_CONNECTION_NUMBER))
                         connectionLimit = Integer.parseInt(argumentsList.get(i + 1));
 
-                    if (Objects.equals(argumentsList.get(i), Constants.ARG_PORT_NUMBER))
+                    if (Objects.equals(argumentsList.get(i), Constant.ARG_PORT_NUMBER))
                         portNumber = Integer.parseInt(argumentsList.get(i + 1));
-                    if(Objects.equals(argumentsList.get(i), Constants.ARG_DEBUG))
+                    if(Objects.equals(argumentsList.get(i), Constant.ARG_DEBUG))
                         isDebugEnabled = true;
                 }
             } catch (Exception e) {
