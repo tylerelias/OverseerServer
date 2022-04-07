@@ -41,7 +41,6 @@ You can also make the Threadneedle clients step more once they have completed th
 
 - BankInformation object, trying to reduce the sending of it at the start (tricky, because you can't know for sure if the current list is the actually final list. Fischer's consensus problem and all that)
 - (**Implemented, needs testing**) Revert failed transactions (Out of more than 100k steps of testing, it hasn't happened, but it should be a fallback mechanism in the event)
-- Major changes to datastructures were done, all tested a generic simulation test, but they need more looking into for each line of code
 
 ### Bugs / Missing features
 
